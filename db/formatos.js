@@ -45,6 +45,14 @@ function generarFolio(id, fecha) {
   return `${anio}-${String(id).padStart(4, '0')}`;
 }
 
+function primerDestino(settings) {
+  try {
+    const lista = JSON.parse(settings.destinos_json || '[]');
+    if (Array.isArray(lista) && lista[0] && lista[0].nombre) return lista[0].nombre;
+  } catch { /* ignora settings corruptos */ }
+  return 'FORESTAL TEZAINS';
+}
+
 function normalizarGeneros(lista) {
   if (!Array.isArray(lista)) return [];
   return lista
@@ -119,11 +127,11 @@ function createFormato(data) {
 
   const info = db.prepare(`
     INSERT INTO formatos (
-      folio, productor, grua, fecha, fecha_texto, producto_fsc,
+      folio, productor, grua, fecha, fecha_texto, producto_fsc, destino,
       generos_json, ajustes_json, iva_rate, isr_rate,
       observaciones, estado, created_at, updated_at
     ) VALUES (
-      @folio, @productor, @grua, @fecha, @fecha_texto, @producto_fsc,
+      @folio, @productor, @grua, @fecha, @fecha_texto, @producto_fsc, @destino,
       @generos_json, @ajustes_json, @iva_rate, @isr_rate,
       @observaciones, @estado, @created_at, @updated_at
     )
@@ -134,6 +142,7 @@ function createFormato(data) {
     fecha: data.fecha,
     fecha_texto: data.fecha_texto || null,
     producto_fsc: data.producto_fsc || settings.fsc_texto || '',
+    destino: data.destino || primerDestino(settings),
     generos_json: JSON.stringify(generos),
     ajustes_json: JSON.stringify(ajustes),
     iva_rate: data.iva_rate != null ? num(data.iva_rate) : num(settings.iva_rate || 0.16),
@@ -167,6 +176,7 @@ function updateFormato(id, data) {
       fecha = @fecha,
       fecha_texto = @fecha_texto,
       producto_fsc = @producto_fsc,
+      destino = @destino,
       generos_json = @generos_json,
       ajustes_json = @ajustes_json,
       iva_rate = @iva_rate,
@@ -182,6 +192,7 @@ function updateFormato(id, data) {
     fecha: merged.fecha,
     fecha_texto: merged.fecha_texto || null,
     producto_fsc: merged.producto_fsc || '',
+    destino: merged.destino || '',
     generos_json: JSON.stringify(generos),
     ajustes_json: JSON.stringify(ajustes),
     iva_rate: num(merged.iva_rate),

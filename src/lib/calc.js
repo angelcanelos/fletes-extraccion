@@ -40,6 +40,30 @@ export function calcularFormato(data) {
   };
 }
 
+// Cálculo del flete de madera en rollo.
+//   lineas: [{ fecha, folio, paraje, grua, metros }, ...]
+export function calcularFlete(data) {
+  const d = data || {};
+  const ivaRate = d.iva_rate != null ? num(d.iva_rate) : 0.16;
+  const retencionRate = d.retencion_rate != null ? num(d.retencion_rate) : 0.04;
+  const isrRate = d.isr_rate != null ? num(d.isr_rate) : 0.0125;
+  const precioFlete = num(d.precio_flete);
+
+  const lineas = (d.lineas || []).map((l) => ({ ...l, metros: num(l.metros) }));
+  const totalMetros = lineas.reduce((s, l) => s + l.metros, 0);
+  const totalFlete = totalMetros * precioFlete;
+  const iva = totalFlete * ivaRate;
+  const retencion = totalFlete * retencionRate;
+  const isr = totalFlete * isrRate;
+  const total = totalFlete + iva - retencion - isr;
+
+  return {
+    lineas, totalMetros, precioFlete, totalFlete,
+    ivaRate, retencionRate, isrRate, iva, retencion, isr,
+    total, saldoFavor: total
+  };
+}
+
 export function formatoMoneda(v) {
   const n = num(v);
   return n.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -56,6 +80,13 @@ export function fechaLargaEs(iso) {
   const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
   const [y, m, d] = iso.split('-').map(Number);
   return `AL ${d} ${meses[m - 1]} ${y}`;
+}
+
+export function fechaCortaEs(iso) {
+  if (!iso) return '';
+  const meses = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const [y, m, d] = iso.split('-').map(Number);
+  return `${String(d).padStart(2, '0')} ${meses[m - 1]} ${y}`;
 }
 
 export function fechaLegible(iso) {

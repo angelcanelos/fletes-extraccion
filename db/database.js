@@ -54,7 +54,43 @@ CREATE TABLE IF NOT EXISTS formatos (
 CREATE INDEX IF NOT EXISTS idx_formatos_fecha ON formatos(fecha);
 CREATE INDEX IF NOT EXISTS idx_formatos_grua ON formatos(grua);
 CREATE INDEX IF NOT EXISTS idx_formatos_productor ON formatos(productor);
+
+CREATE TABLE IF NOT EXISTS fletes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  folio TEXT,
+  fletero TEXT NOT NULL,
+  fecha TEXT NOT NULL,
+  fecha_texto TEXT,
+
+  lineas_json TEXT NOT NULL DEFAULT '[]',
+  precio_flete REAL NOT NULL DEFAULT 0,
+
+  iva_rate REAL NOT NULL DEFAULT 0.16,
+  retencion_rate REAL NOT NULL DEFAULT 0.04,
+  isr_rate REAL NOT NULL DEFAULT 0.0125,
+
+  observaciones TEXT,
+  estado TEXT NOT NULL DEFAULT 'guardado',
+
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_fletes_fecha ON fletes(fecha);
+CREATE INDEX IF NOT EXISTS idx_fletes_fletero ON fletes(fletero);
 `);
+
+// Migración: agrega la columna "destino" a formatos ya existentes (antes
+// se mostraba un texto fijo de Ajustes; ahora se elige por formato de un
+// catálogo). Los formatos viejos se quedan con el texto que ya usaban.
+{
+  const cols = db.prepare('PRAGMA table_info(formatos)').all().map((c) => c.name);
+  if (!cols.includes('destino')) {
+    db.exec(`ALTER TABLE formatos ADD COLUMN destino TEXT NOT NULL DEFAULT ''`);
+    const previo = db.prepare(`SELECT valor FROM settings WHERE clave = 'etiqueta_extra'`).get();
+    db.prepare('UPDATE formatos SET destino = ? WHERE destino = \'\'').run(previo ? previo.valor : 'FORESTAL TEZAINS');
+  }
+}
 
 // Migración: versiones anteriores guardaban 3 géneros fijos (genero1/2/3)
 // y un "descuento_combustible" fijo en columnas propias. Si la base de
@@ -112,17 +148,26 @@ const defaults = {
     { nombre: 'TASCATE', precio: 280 }
   ]),
   gruas_json: JSON.stringify([
-    { grua: 'GRUA 1', productor: 'JOSE ANGEL RODRIGUEZ' },
-    { grua: 'GRUA 2', productor: 'FIDENCIO NUÑEZ RAMIREZ' },
-    { grua: 'GRUA 3', productor: 'FRANCISCO ESPINOZA REYES' },
-    { grua: 'GRUA 4', productor: 'RAMON NUÑEZ NUÑEZ' },
-    { grua: 'GRUA 5', productor: 'MARTIN RODRIGUEZ M.' },
-    { grua: 'GRUA 6', productor: 'MARCO ANTONIO REYES' },
-    { grua: 'GRUA 7', productor: 'X' },
-    { grua: 'GRUA 8', productor: 'JOSE ANTONIO VIRREY' },
-    { grua: 'GRUA 9', productor: 'COSME RODRIGUEZ CORRAL' },
-    { grua: 'GRUA 10', productor: 'OCTAVIO VIRREY REYES' }
+    { grua: 'GRUA 1', productor: 'JOSE ANGEL RODRIGUEZ', precio_flete: 290.76 },
+    { grua: 'GRUA 2', productor: 'FIDENCIO NUÑEZ RAMIREZ', precio_flete: 234.71 },
+    { grua: 'GRUA 3', productor: 'FRANCISCO ESPINOZA REYES', precio_flete: 291.00 },
+    { grua: 'GRUA 4', productor: 'RAMON NUÑEZ NUÑEZ', precio_flete: 198.66 },
+    { grua: 'GRUA 5', productor: 'MARTIN RODRIGUEZ M.', precio_flete: 273.52 },
+    { grua: 'GRUA 6', productor: 'MARCO ANTONIO REYES', precio_flete: 222.35 },
+    { grua: 'GRUA 7', productor: 'X', precio_flete: 0 },
+    { grua: 'GRUA 8', productor: 'JOSE ANTONIO VIRREY', precio_flete: 226.38 },
+    { grua: 'GRUA 9', productor: 'COSME RODRIGUEZ CORRAL', precio_flete: 278.40 },
+    { grua: 'GRUA 10', productor: 'OCTAVIO VIRREY REYES', precio_flete: 270.80 }
   ]),
+  destinos_json: JSON.stringify([
+    { nombre: 'FORESTAL TEZAINS' }
+  ]),
+  fleteros_json: JSON.stringify([
+    { nombre: 'ELEAZAR BARRAZA NEVAREZ' }
+  ]),
+  fletes_iva_rate: '0.16',
+  fletes_retencion_rate: '0.04',
+  fletes_isr_rate: '0.0125',
   logo_path: 'images/logo.png'
 };
 
@@ -131,6 +176,22 @@ const insertManyDefaults = db.transaction((obj) => {
   for (const [clave, valor] of Object.entries(obj)) insertDefault.run(clave, valor);
 });
 insertManyDefaults(defaults);
+
+// Migración: si ya existía un catálogo de grúas de una versión anterior
+// (sin precio_flete por grúa), se completa con 0 en vez de perder las
+// grúas/productores ya capturados.
+{
+  const fila = db.prepare(`SELECT valor FROM settings WHERE clave = 'gruas_json'`).get();
+  if (fila) {
+    try {
+      const lista = JSON.parse(fila.valor || '[]');
+      if (Array.isArray(lista) && lista.some((g) => g && g.precio_flete === undefined)) {
+        const completa = lista.map((g) => ({ ...g, precio_flete: g.precio_flete != null ? g.precio_flete : 0 }));
+        db.prepare(`UPDATE settings SET valor = ? WHERE clave = 'gruas_json'`).run(JSON.stringify(completa));
+      }
+    } catch { /* ignora json corrupto */ }
+  }
+}
 
 // Limpieza de ajustes viejos de una versión anterior (géneros/descuento fijos,
 // lista de grúas en texto plano) que ya no se usan, para no dejar

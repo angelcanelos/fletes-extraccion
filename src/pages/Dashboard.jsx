@@ -99,7 +99,7 @@ export default function Dashboard() {
       title="Formatos de extracción"
       subtitle="Consulta, busca, imprime o crea un nuevo formato de extracción de trocería en rollo."
       action={
-        <Link to="/formato/nuevo" className="inline-flex items-center gap-2 rounded-full bg-verde px-[18px] py-2.5 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte">
+        <Link to="/extraccion/nuevo" className="inline-flex items-center gap-2 rounded-full bg-verde px-[18px] py-2.5 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte">
           <Plus className="h-4 w-4" strokeWidth={2.5} /> Nuevo formato
         </Link>
       }
@@ -244,13 +244,13 @@ export default function Dashboard() {
                       <div className="flex flex-wrap gap-1.5">
                         <a
                           className="flex items-center gap-1.5 rounded-full bg-verde-suave px-3 py-1.5 text-[12.5px] font-bold text-verde-fuerte transition-colors hover:bg-verde-borde"
-                          href={`/imprimir/${f.id}`} target="_blank" rel="noreferrer" title="Imprimir formato"
+                          href={`/extraccion/imprimir/${f.id}`} target="_blank" rel="noreferrer" title="Imprimir formato"
                         >
                           <Printer className="h-3.5 w-3.5" strokeWidth={2.25} /> Imprimir
                         </a>
                         <Link
                           className="flex items-center gap-1.5 rounded-full bg-[#eef1ec] px-3 py-1.5 text-[12.5px] font-bold text-[#33402f] transition-colors hover:bg-[#e1e6dc]"
-                          to={`/formato/${f.id}/editar`} title="Editar formato"
+                          to={`/extraccion/${f.id}/editar`} title="Editar formato"
                         >
                           <SquarePen className="h-3.5 w-3.5" strokeWidth={2.25} /> Editar
                         </Link>
@@ -286,7 +286,7 @@ function EstadoVacio({ hayFiltrosActivos }) {
       ) : (
         <>
           Aún no hay formatos guardados.<br />
-          <Link to="/formato/nuevo" className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-verde px-[18px] py-2.5 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte">
+          <Link to="/extraccion/nuevo" className="mt-3.5 inline-flex items-center gap-2 rounded-full bg-verde px-[18px] py-2.5 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte">
             <Plus className="h-4 w-4" strokeWidth={2.5} /> Crear el primer formato
           </Link>
         </>

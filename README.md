@@ -1,8 +1,15 @@
-# Extracción de Trocería en Rollo — Forestal Tezains
+# Forestal Tezains — Extracción y Fletes
 
-Aplicación para crear, guardar e imprimir los formatos de **Extracción de Trocería en Rollo**.
-El formato impreso está diseñado para verse igual que el formato oficial 2026 (logo, cintillo
-azul, cajas de productor/grúa/fecha, tabla de géneros, IVA, ISR y saldo a favor).
+Aplicación para crear, guardar e imprimir dos comprobantes:
+
+- **Extracción de Trocería en Rollo** (`/extraccion`): logo, cintillo azul, cajas de
+  productor/grúa/fecha, tabla de géneros, IVA, ISR y saldo a favor.
+- **Flete de Madera en Rollo** (`/fletes`): recreación fiel del comprobante de flete en
+  hoja completa (título, fletero, fecha, tabla de viajes por folio/paraje/grúa/metros, IVA,
+  retención e ISR).
+
+Ambos comprobantes impresos están congelados en su diseño — no se deben modificar salvo que
+de verdad cambie el formato oficial.
 
 ## Cómo abrir la aplicación (para la secretaria)
 
@@ -31,17 +38,18 @@ levantan el servidor en `http://localhost:3000` para abrir desde el navegador. E
 
 ## Qué puedes hacer
 
-- **Inicio**: las grúas se muestran como carpetas (10 por defecto, con su productor fijo);
-  al abrir una se ve la lista de sus formatos. El buscador y los filtros (grúa, fecha, estado)
-  siguen disponibles arriba y, al usarlos, cambian a una lista plana con los resultados de
-  todas las grúas. Desde ahí puedes imprimir, editar o eliminar cualquier formato.
-- **Nuevo formato**: eliges la grúa de una lista — el productor se llena solo, porque cada
-  grúa tiene un productor fijo (se configura en Ajustes). Llena la fecha, metros y precio de
-  cada género, y los ajustes (descuentos o cargos) que apliquen. A la derecha ves la vista
-  previa exactamente como se imprimirá.
-- **Ajustes**: nombres de los géneros y su precio por defecto, IVA/ISR por defecto, texto del
-  producto FSC, y la tabla de grúas con su productor fijo (agregar, quitar o corregir).
-- **Imprimir**: abre el formato ya guardado y usa el botón "Imprimir" (o Ctrl+P). Puedes
+- **Extracción**: las grúas se muestran como carpetas (con su productor fijo); al abrir una
+  se ve la lista de sus formatos. El buscador y los filtros (grúa, fecha, estado) siguen
+  disponibles arriba y, al usarlos, cambian a una lista plana con los resultados. Al crear un
+  formato solo eliges grúa (el productor se llena solo) y destino de una lista; los géneros y
+  ajustes (descuentos o cargos, opcionales) se llenan libremente. IVA fijo, ISR opcional.
+- **Fletes**: al crear un flete eliges el fletero de una lista, agregas los viajes (fecha,
+  folio, paraje, grúa, metros — tantas filas como haga falta) y el precio de flete se sugiere
+  solo según la grúa del primer viaje. IVA, retención e ISR son todos opcionales por flete.
+- **Ajustes**: datos generales de la empresa e impuestos por defecto (Extracción y Fletes),
+  y la sección **Catálogos** — géneros, grúas (con productor y precio de flete), destinos y
+  fleteros — cada uno con su propio botón de guardar, sin mezclar todo en un solo formulario.
+- **Imprimir**: abre el comprobante ya guardado y usa el botón "Imprimir" (o Ctrl+P). Puedes
   indicarle a tu impresora cuántas copias quieres.
 
 ## El logo

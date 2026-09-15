@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { House, FilePlus2, Settings } from 'lucide-react';
+import { Trees, Truck, Settings } from 'lucide-react';
 
 const linkClass = ({ isActive }) =>
   `flex items-center gap-1.5 px-3.5 py-2 rounded-full text-sm font-semibold transition-colors ${
@@ -16,14 +16,14 @@ export default function NavBar() {
           className="h-10 w-10 rounded-xl object-contain"
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
-        <span>Extracción de Trocería</span>
+        <span>Forestal Tezains</span>
       </div>
       <nav className="flex flex-wrap gap-1.5">
-        <NavLink to="/" end className={linkClass}>
-          <House className="h-4 w-4" strokeWidth={2.25} /> Inicio
+        <NavLink to="/extraccion" className={linkClass}>
+          <Trees className="h-4 w-4" strokeWidth={2.25} /> Extracción
         </NavLink>
-        <NavLink to="/formato/nuevo" className={linkClass}>
-          <FilePlus2 className="h-4 w-4" strokeWidth={2.25} /> Nuevo formato
+        <NavLink to="/fletes" className={linkClass}>
+          <Truck className="h-4 w-4" strokeWidth={2.25} /> Fletes
         </NavLink>
         <NavLink to="/ajustes" className={linkClass}>
           <Settings className="h-4 w-4" strokeWidth={2.25} /> Ajustes

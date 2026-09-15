@@ -51,5 +51,45 @@ export const Api = {
       body: JSON.stringify(data)
     });
     return res.json();
+  },
+
+  // ---------------- Fletes ----------------
+  async listarFletes(params) {
+    const qs = new URLSearchParams(Object.entries(params || {}).filter(([, v]) => v));
+    const res = await fetch('/api/fletes?' + qs.toString());
+    return res.json();
+  },
+  async obtenerFlete(id) {
+    const res = await fetch(`/api/fletes/${id}`);
+    if (!res.ok) throw new Error('No se encontró el flete');
+    return res.json();
+  },
+  async crearFlete(data) {
+    const res = await fetch('/api/fletes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Error al guardar');
+    return body;
+  },
+  async actualizarFlete(id, data) {
+    const res = await fetch(`/api/fletes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.error || 'Error al guardar');
+    return body;
+  },
+  async eliminarFlete(id) {
+    const res = await fetch(`/api/fletes/${id}`, { method: 'DELETE' });
+    return res.ok;
+  },
+  async statsFletes() {
+    const res = await fetch('/api/fletes/stats');
+    return res.json();
   }
 };

@@ -1,0 +1,136 @@
+/* =========================================================
+   FORMATO "FLETE DE MADERA EN ROLLO" — recreación fiel del
+   comprobante de referencia (foto). No usa los colores/estilos
+   de formato.css (Extracción): es un documento distinto, más
+   sobrio, pensado para imprimirse en hoja completa.
+   ========================================================= */
+
+.ft-hoja{
+  width: 19cm;
+  background: #fff;
+  margin: 0 auto;
+  position: relative;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #111;
+  box-sizing: border-box;
+  padding: 1cm 1.2cm;
+}
+.ft-hoja *{ box-sizing: border-box; }
+
+.ft-encabezado{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1cm;
+  margin-bottom: 0.4cm;
+}
+
+.ft-titulo-box{
+  border: 1.5px solid #111;
+  border-radius: 2px;
+  padding: 0.35cm 0.7cm;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-weight: 700;
+  font-size: 21px;
+  line-height: 1.28;
+  color: #1c1c1c;
+}
+
+.ft-logo-wrap{
+  width: 3.1cm;
+  height: 3.1cm;
+  border-radius: 50%;
+  border: 1px solid #ccc;
+  overflow: hidden;
+  flex: 0 0 auto;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2cm;
+}
+.ft-logo-wrap img{ width: 100%; height: 100%; object-fit: contain; }
+.ft-logo-wrap .ft-logo-fallback{ font-size: 9px; color:#888; text-align:center; }
+
+.ft-fletero{
+  text-align: center;
+  font-family: Georgia, "Times New Roman", Times, serif;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 20px;
+  color: #2c3e50;
+  margin: 0.15cm 0 0.5cm 0;
+}
+
+.ft-fecha-box{
+  display: inline-block;
+  border: 1.5px solid #111;
+  border-radius: 2px;
+  padding: 0.14cm 0.45cm;
+  font-weight: 700;
+  font-size: 13px;
+  margin-bottom: 0.4cm;
+  letter-spacing: 0.2px;
+}
+
+table.ft-tabla{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 0.35cm;
+}
+table.ft-tabla th, table.ft-tabla td{
+  border: 1px solid #111;
+  padding: 0.16cm 0.28cm;
+}
+table.ft-tabla th{
+  font-weight: 700;
+  text-transform: uppercase;
+  text-align: left;
+}
+table.ft-tabla th.ft-num, table.ft-tabla td.ft-num{ text-align: right; }
+
+.ft-totales{
+  width: 62%;
+  margin: 0 0 0.55cm auto;
+  font-size: 13px;
+}
+.ft-totales tr td{ padding: 0.09cm 0.1cm; }
+.ft-totales tr td.ft-label{ font-weight: 700; text-transform: uppercase; }
+.ft-totales tr td.ft-val{ text-align: right; font-weight: 700; white-space: nowrap; }
+
+.ft-resumen{
+  width: 62%;
+  margin: 0 0 0.4cm auto;
+  font-size: 13px;
+}
+.ft-resumen tr td{ padding: 0.1cm 0.1cm; }
+.ft-resumen tr td.ft-label{ font-weight: 700; text-transform: uppercase; }
+.ft-resumen tr td.ft-val{ text-align: right; font-weight: 700; white-space: nowrap; }
+.ft-resumen tr.ft-total td{ border-top: 1px solid #999; font-weight: 900; padding-top: 0.16cm; }
+
+.ft-saldo{
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5cm;
+  font-weight: 900;
+  font-size: 15px;
+  text-transform: uppercase;
+  margin: 0.2cm 0 0.3cm 0;
+}
+.ft-saldo .ft-val{ text-decoration: underline; text-underline-offset: 3px; }
+
+.ft-footer-space{ height: 0.3cm; }
+
+@media print{
+  html, body{ background: #fff; }
+  .no-imprimir{ display: none !important; }
+  .ft-hoja, .ft-hoja *{
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  .ft-hoja{ margin: 0 auto; box-shadow: none !important; }
+  @page{ size: auto; margin: 10mm; }
+}

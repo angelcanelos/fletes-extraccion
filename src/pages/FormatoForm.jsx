@@ -41,8 +41,21 @@ function parseGruas(settings) {
   return [];
 }
 
+function parseDestinos(settings) {
+  try {
+    const lista = JSON.parse(settings.destinos_json || '[]');
+    if (Array.isArray(lista)) return lista.filter((d) => d && d.nombre);
+  } catch { /* ignora settings corruptos */ }
+  return [];
+}
+
+function primerDestino(settings) {
+  const lista = parseDestinos(settings);
+  return lista[0] ? lista[0].nombre : 'FORESTAL TEZAINS';
+}
+
 const datosVacios = {
-  productor: '', grua: '', fecha: fechaHoy(), estado: 'guardado',
+  productor: '', grua: '', destino: '', fecha: fechaHoy(), estado: 'guardado',
   generos: [],
   ajustes: [],
   iva_rate_pct: 16, isr_rate_pct: 1.25,
@@ -74,7 +87,7 @@ export default function FormatoForm() {
         const f = await Api.obtenerFormato(id);
         const generos = (f.generos && f.generos.length) ? f.generos : generosPorDefecto(s);
         setDatos({
-          productor: f.productor, grua: f.grua, fecha: f.fecha, estado: f.estado || 'guardado',
+          productor: f.productor, grua: f.grua, destino: f.destino || primerDestino(s), fecha: f.fecha, estado: f.estado || 'guardado',
           generos: generos.map((g) => ({ nombre: g.nombre, metros: ceroVacio(g.metros), precio: ceroVacio(g.precio) })),
           ajustes: (f.ajustes || []).map((a) => ({ etiqueta: a.etiqueta, monto: ceroVacio(a.monto) })),
           iva_rate_pct: f.iva_rate * 100, isr_rate_pct: f.isr_rate * 100,
@@ -88,6 +101,7 @@ export default function FormatoForm() {
         setDatos((d) => ({
           ...d,
           generos: generosPorDefecto(s),
+          destino: primerDestino(s),
           iva_rate_pct: (s.iva_rate || 0.16) * 100,
           isr_rate_pct: isrDefault
         }));
@@ -158,6 +172,7 @@ export default function FormatoForm() {
     const payload = {
       productor: datos.productor.trim(),
       grua: datos.grua.trim(),
+      destino: (datos.destino || '').trim() || primerDestino(settings),
       fecha: datos.fecha,
       estado: datos.estado,
       producto_fsc: settings.fsc_texto || '',
@@ -176,7 +191,7 @@ export default function FormatoForm() {
         ? await Api.actualizarFormato(id, payload)
         : await Api.crearFormato(payload);
       toast.exito(esEdicion ? 'Cambios guardados correctamente.' : 'Formato guardado correctamente.');
-      navigate(`/imprimir/${guardado.id}?nuevo=1`);
+      navigate(`/extraccion/imprimir/${guardado.id}?nuevo=1`);
     } catch (err) {
       setMensaje({ tipo: 'error', texto: err.message });
       toast.error(err.message || 'No se pudo guardar el formato.');
@@ -229,6 +244,11 @@ export default function FormatoForm() {
                   {datos.productor || <span className="text-[#9aa696]">Se llena al elegir la grúa</span>}
                 </div>
               </Campo>
+              <Campo label="Destino">
+                <select className="form-input" value={datos.destino} onChange={(e) => campo('destino', e.target.value)}>
+                  {parseDestinos(settings).map((d) => <option key={d.nombre} value={d.nombre}>{d.nombre}</option>)}
+                </select>
+              </Campo>
               <Campo label="Fecha">
                 <input type="date" className="form-input" required value={datos.fecha} onChange={(e) => campo('fecha', e.target.value)} />
               </Campo>
@@ -240,7 +260,7 @@ export default function FormatoForm() {
               </Campo>
             </div>
             <p className="mt-2.5 text-xs text-[#6b7a68]">
-              El productor va ligado a la grúa; para cambiarlo entra a Ajustes → Grúas y productores.
+              El productor va ligado a la grúa; el destino se administra en Ajustes → Catálogos.
             </p>
           </Panel>
 
@@ -331,7 +351,7 @@ export default function FormatoForm() {
           </Panel>
 
           <div className="mt-5 flex flex-wrap justify-end gap-2.5">
-            <button type="button" className="flex items-center gap-2 rounded-full bg-[#eef1ec] px-[18px] py-2.5 text-sm font-bold text-[#33402f] transition-colors hover:bg-[#e1e6dc]" onClick={() => navigate('/')}>
+            <button type="button" className="flex items-center gap-2 rounded-full bg-[#eef1ec] px-[18px] py-2.5 text-sm font-bold text-[#33402f] transition-colors hover:bg-[#e1e6dc]" onClick={() => navigate('/extraccion')}>
               <X className="h-4 w-4" strokeWidth={2.5} /> Cancelar
             </button>
             <button
@@ -358,7 +378,7 @@ export default function FormatoForm() {
                     grua={datos.grua}
                     fechaTexto={fechaLargaEs(datos.fecha)}
                     productoFsc={fscTexto}
-                    etiquetaExtra={settings.etiqueta_extra}
+                    etiquetaExtra={datos.destino}
                     generos={datos.generos}
                     ajustes={datos.ajustes}
                     ivaRate={(parseFloat(datos.iva_rate_pct) || 0) / 100}
