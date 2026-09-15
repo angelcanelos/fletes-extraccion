@@ -11,9 +11,9 @@ export default function NavBar() {
     <div className="sticky top-0 z-50 flex flex-wrap items-center justify-between gap-3 bg-gradient-to-br from-verde-fuerte to-verde px-5 py-3.5 text-white shadow-panel">
       <div className="flex items-center gap-3 text-lg font-bold">
         <img
-          src="/images/logo.png"
+          src="/images/LogoFletes.png"
           alt="logo"
-          className="h-10 w-10 rounded-full bg-white object-cover"
+          className="h-10 w-10 rounded-xl object-contain"
           onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
         <span>Extracción de Trocería</span>
