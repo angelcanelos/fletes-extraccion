@@ -71,7 +71,7 @@
       "provider": "github",
       "owner": "angelcanelos",
       "repo": "fletes-extraccion",
-      "draft": false
+      "releaseType": "release"
     }
   }
 }
