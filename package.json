@@ -70,7 +70,8 @@
     "publish": {
       "provider": "github",
       "owner": "angelcanelos",
-      "repo": "fletes-extraccion"
+      "repo": "fletes-extraccion",
+      "draft": false
     }
   }
 }
