@@ -27,6 +27,21 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
+      # electron-builder publica el release ya como "publicado" (no borrador),
+      # y GitHub exige que el tag de esa versión ya exista de verdad en el
+      # repositorio antes de eso ("Published releases must have a valid tag").
+      - name: Crear tag de versión
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "El tag $TAG ya existe, no se vuelve a crear."
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
       - name: Compilar y publicar release en GitHub
         run: npm run electron:publish
         env:
