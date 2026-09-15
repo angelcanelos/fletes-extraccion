@@ -4,18 +4,30 @@ Aplicación para crear, guardar e imprimir los formatos de **Extracción de Troc
 El formato impreso está diseñado para verse igual que el formato oficial 2026 (logo, cintillo
 azul, cajas de productor/grúa/fecha, tabla de géneros, IVA, ISR y saldo a favor).
 
-## Cómo abrir la aplicación (Windows)
+## Cómo abrir la aplicación (para la secretaria)
 
-1. Si no tienes Node.js instalado, descárgalo de https://nodejs.org (botón que dice "LTS") e
-   instálalo (siguiente, siguiente, siguiente).
-2. Dentro de esta carpeta, haz doble clic en **`start.bat`**.
-   - La primera vez tardará uno o dos minutos porque instala lo necesario.
-   - Se abrirá tu navegador en `http://localhost:3000` con la aplicación.
-3. Para volver a usarla otro día, vuelve a hacer doble clic en `start.bat`. No cierres la
-   ventana negra mientras estés usando la aplicación; ciérrala cuando termines.
+Ahora la app es un programa normal de Windows, no hay que abrir el navegador ni usar
+`start.bat`:
 
-No necesitas internet para usar la aplicación una vez instalada (solo para instalarla la
-primera vez). Todo se guarda en tu computadora.
+1. Se instala una sola vez con el instalador (`Extraccion.de.Troceria.Setup.x.x.x.exe`),
+   que se descarga desde la página de **Releases** del repositorio de GitHub. Doble clic,
+   "Siguiente", "Siguiente", "Instalar".
+2. Después de instalada, se abre desde el acceso directo que queda en el Escritorio o en
+   el menú de Inicio, como cualquier otro programa (Word, Excel, etc.).
+3. Cada vez que abre, aparece un momento una pantalla de carga (con el logo) que revisa si
+   hay una versión nueva; si la hay, la descarga e instala sola, y la app se reabre ya
+   actualizada. Si no hay internet en ese momento, simplemente abre con la versión que ya
+   tenía instalada — nunca se queda atorada esperando.
+
+No hace falta instalar Node.js para usarla (eso ya solo es necesario para programar/
+modificar la app). Ver la sección **App de escritorio (Electron) y actualizaciones
+automáticas** más abajo para el detalle técnico y cómo publicar una actualización nueva.
+
+### Modo anterior (navegador), para desarrollo
+
+`start.bat` (y `npm start`) siguen funcionando igual que antes: compilan la interfaz y
+levantan el servidor en `http://localhost:3000` para abrir desde el navegador. Es el modo
+útil para desarrollar/probar rápido; la secretaria no lo necesita.
 
 ## Qué puedes hacer
 
@@ -42,11 +54,15 @@ poner el logo oficial en buena calidad:
 
 ## Dónde se guardan los datos
 
-Los formatos se guardan en un archivo de base de datos SQLite dentro de la carpeta
-`data/extraccion.db` (se crea solo la primera vez que abres la aplicación). Es un solo
-archivo: para respaldarlo, copia esa carpeta `data` a un USB o a tu nube (OneDrive, en tu
-caso, ya lo respalda automáticamente porque el proyecto vive dentro de tu carpeta de
-OneDrive).
+- **App de escritorio (la que usa la secretaria):** los formatos viven en un archivo SQLite
+  dentro de la carpeta de datos de Windows del usuario:
+  `%APPDATA%\Extraccion de Troceria\data\extraccion.db` (típicamente
+  `C:\Users\<usuario>\AppData\Roaming\Extraccion de Troceria\data\extraccion.db`). Esa
+  carpeta está **fuera** de donde se instala el programa, así que las actualizaciones
+  automáticas nunca la tocan ni la borran — se actualiza el programa, los datos se quedan
+  intactos. Para respaldarla, copia esa carpeta a un USB o a la nube.
+- **Modo navegador / desarrollo:** se guarda en `data/extraccion.db` dentro de esta misma
+  carpeta del proyecto, como antes.
 
 ## El formato impreso no se debe modificar
 
@@ -76,6 +92,74 @@ hacer es:
 Cuando llegue el momento, se puede pedir ayuda para hacer esa migración sin perder los
 formatos ya capturados (se exportan de SQLite y se importan a Supabase).
 
+## App de escritorio (Electron) y actualizaciones automáticas
+
+La app se empaqueta como un programa de escritorio de Windows con
+[Electron](https://www.electronjs.org/) y se actualiza sola usando
+[`electron-updater`](https://www.electron.build/auto-update) contra los **Releases** del
+repositorio de GitHub (`angelcanelos/fletes-extraccion`). Así, cuando se le agregan
+funciones nuevas a la app, la secretaria solo tiene que volver a abrirla para recibirlas —
+no hay que reinstalar nada a mano.
+
+### Requisito: el repositorio debe ser público
+
+`electron-updater` revisa actualizaciones consultando la API pública de GitHub, sin ningún
+token. Eso solo funciona si el repositorio es **público** (si es privado, la revisión de
+actualizaciones falla). Para cambiarlo una sola vez:
+
+1. Entra a https://github.com/angelcanelos/fletes-extraccion/settings
+2. Baja hasta "Danger Zone" → **Change visibility** → **Change to public** → confirma
+   escribiendo el nombre del repositorio.
+
+No hay ningún dato sensible en el repositorio (la base de datos con los formatos reales
+nunca se sube, está en `.gitignore`), así que hacerlo público no expone información de la
+empresa ni de los formatos capturados — solo el código.
+
+### Cómo funciona al abrir la app
+
+1. `electron/main.js` arranca y muestra `electron/splash.html`: una pantalla de carga con
+   el logo (estilo Discord) mientras revisa actualizaciones.
+2. Si hay una versión nueva publicada en GitHub Releases, la descarga mostrando el
+   progreso en esa misma pantalla, la instala y reinicia la app sola.
+3. Si no hay actualización (o no hay internet), pasa directo a la ventana principal, que
+   carga la misma interfaz React de siempre servida por un Express local en un puerto
+   libre — la secretaria no nota ninguna diferencia con "la app".
+4. Los datos (`db/database.js`) se guardan en la carpeta de datos del usuario de Windows,
+   no dentro de la carpeta donde se instala el programa — por diseño, para que sobrevivan
+   sin problema a cada actualización (ver "Dónde se guardan los datos" arriba).
+
+### Publicar una actualización nueva
+
+Cada vez que se le agregan funciones o se corrige algo:
+
+1. Sube el cambio de versión: edita el campo `"version"` en `package.json` (por ejemplo
+   de `"2.0.0"` a `"2.1.0"`) — `electron-updater` compara este número para saber si hay
+   algo más nuevo que lo instalado, así que **si no cambia, no hay actualización**.
+2. Confirma (`git commit`) y sube (`git push`) a la rama `main`, como siempre.
+3. Eso dispara automáticamente el flujo de GitHub Actions en
+   `.github/workflows/release.yml`, que compila el instalador de Windows y lo publica como
+   un nuevo Release en GitHub (usando `npm run electron:publish`, con
+   `electron-builder`). Se puede ver el progreso en la pestaña **Actions** del
+   repositorio.
+4. La próxima vez que la secretaria abra la app, la pantalla de carga detecta ese Release
+   nuevo, lo descarga e instala sola.
+
+También se puede compilar y publicar manualmente desde esta computadora (por ejemplo si
+GitHub Actions no está disponible), con un token de GitHub con permiso de escribir
+Releases:
+
+```bash
+GH_TOKEN=tu_token_de_github npm run electron:publish
+```
+
+Y para solo compilar el instalador sin publicarlo (probarlo localmente antes de subirlo):
+
+```bash
+npm run electron:build
+```
+
+El instalador queda en la carpeta `release/` (no se sube al repositorio).
+
 ## Estructura del proyecto
 
 La aplicación ahora está hecha con **React + Tailwind CSS** (usando Vite como
@@ -84,9 +168,16 @@ para el servidor y los datos, igual que antes.
 
 ```
 extraccion-app/
+├── electron/                    app de escritorio (Electron)
+│   ├── main.js                  proceso principal: splash, auto-updater, ventana
+│   ├── preload.js               puente seguro para el splash
+│   ├── splash.html              pantalla de carga / actualizando (estilo Discord)
+│   └── assets/                  logo.png e icon.ico del instalador
+├── .github/workflows/
+│   └── release.yml              compila y publica un Release al hacer push a main
 ├── server.js                    servidor y rutas de la API (Express)
 ├── db/
-│   ├── database.js              conexión y esquema de SQLite
+│   ├── database.js              conexión y esquema de SQLite (respeta EXTRACCION_DATA_DIR)
 │   └── formatos.js              funciones para leer/guardar formatos y ajustes
 ├── src/                         código fuente de la interfaz (React)
 │   ├── main.jsx                 punto de entrada
@@ -99,7 +190,10 @@ extraccion-app/
 │   ├── components/
 │   │   ├── ReciboFormato.jsx    estructura del comprobante (no mover)
 │   │   ├── NavBar.jsx           barra superior
-│   │   └── PageLayout.jsx       encabezado + pie de página comunes
+│   │   ├── PageLayout.jsx       encabezado + pie de página comunes
+│   │   ├── Panel.jsx / Campo.jsx  bloques de formulario reutilizables
+│   │   ├── Toast.jsx            notificaciones (éxito/error)
+│   │   └── ConfirmDialog.jsx    diálogo de confirmación (reemplaza confirm())
 │   ├── lib/
 │   │   ├── calc.js              cálculo de totales, IVA, ISR
 │   │   └── api.js               llamadas a la API del servidor
@@ -110,9 +204,10 @@ extraccion-app/
 │   └── images/
 │       └── logo.png             logo (reemplazar por el oficial)
 ├── dist/                        interfaz ya compilada (se genera sola, no editar)
-├── data/                        se crea sola; aquí vive la base de datos
+├── release/                     instaladores compilados (se genera sola, no se sube)
+├── data/                        se crea sola; aquí vive la base de datos (modo navegador)
 ├── index.html                   plantilla base de la aplicación (Vite)
-├── start.bat                    doble clic para abrir la aplicación
+├── start.bat                    doble clic para abrir la aplicación en modo navegador
 └── package.json
 ```
 

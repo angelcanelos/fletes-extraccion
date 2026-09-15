@@ -2,18 +2,22 @@
   "name": "extraccion-fletes",
   "version": "2.0.0",
   "description": "App para crear, guardar e imprimir formatos de Extraccion de Troceria en Rollo (Forestal Tezains)",
-  "main": "server.js",
+  "main": "electron/main.js",
   "scripts": {
     "dev:server": "node server.js",
     "dev": "vite",
     "build": "vite build",
     "start": "npm run build && node server.js",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "electron:dev": "npm run build && electron .",
+    "electron:build": "npm run build && electron-builder --win",
+    "electron:publish": "npm run build && electron-builder --win --publish always"
   },
   "license": "UNLICENSED",
   "private": true,
   "dependencies": {
     "better-sqlite3": "^13.0.3",
+    "electron-updater": "^6.8.9",
     "express": "^4.19.2",
     "lucide-react": "^1.46.0",
     "react": "^18.3.1",
@@ -23,8 +27,50 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
+    "electron": "^44.4.0",
+    "electron-builder": "^26.15.3",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "vite": "^5.4.8"
+  },
+  "build": {
+    "appId": "com.forestaltezains.extraccion",
+    "productName": "Extraccion de Troceria",
+    "copyright": "Forestal Tezains",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/better-sqlite3/**/*"
+    ],
+    "npmRebuild": false,
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "db/**/*",
+      "server.js",
+      "package.json",
+      "node_modules/**/*",
+      "!electron/assets/logo-square.png"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ],
+      "icon": "electron/assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "angelcanelos",
+      "repo": "fletes-extraccion"
+    }
   }
 }

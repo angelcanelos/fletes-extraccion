@@ -2,67 +2,76 @@ const express = require('express');
 const path = require('path');
 const repo = require('./db/formatos');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
 const DIST_DIR = path.join(__dirname, 'dist');
 
-app.use(express.json());
-app.use(express.static(DIST_DIR));
+function crearApp() {
+  const app = express();
 
-// ---------------- API: settings ----------------
+  app.use(express.json());
+  app.use(express.static(DIST_DIR));
 
-app.get('/api/settings', (req, res) => {
-  res.json(repo.getSettings());
-});
+  // ---------------- API: settings ----------------
 
-app.put('/api/settings', (req, res) => {
-  const updated = repo.updateSettings(req.body || {});
-  res.json(updated);
-});
+  app.get('/api/settings', (req, res) => {
+    res.json(repo.getSettings());
+  });
 
-// ---------------- API: formatos ----------------
+  app.put('/api/settings', (req, res) => {
+    const updated = repo.updateSettings(req.body || {});
+    res.json(updated);
+  });
 
-app.get('/api/formatos', (req, res) => {
-  const { q, grua, desde, hasta, estado } = req.query;
-  res.json(repo.listFormatos({ q, grua, desde, hasta, estado }));
-});
+  // ---------------- API: formatos ----------------
 
-app.get('/api/formatos/stats', (req, res) => {
-  res.json(repo.stats());
-});
+  app.get('/api/formatos', (req, res) => {
+    const { q, grua, desde, hasta, estado } = req.query;
+    res.json(repo.listFormatos({ q, grua, desde, hasta, estado }));
+  });
 
-app.get('/api/formatos/:id', (req, res) => {
-  const f = repo.getFormato(req.params.id);
-  if (!f) return res.status(404).json({ error: 'No encontrado' });
-  res.json(f);
-});
+  app.get('/api/formatos/stats', (req, res) => {
+    res.json(repo.stats());
+  });
 
-app.post('/api/formatos', (req, res) => {
-  try {
-    validarFormato(req.body);
-    const creado = repo.createFormato(req.body);
-    res.status(201).json(creado);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  app.get('/api/formatos/:id', (req, res) => {
+    const f = repo.getFormato(req.params.id);
+    if (!f) return res.status(404).json({ error: 'No encontrado' });
+    res.json(f);
+  });
 
-app.put('/api/formatos/:id', (req, res) => {
-  try {
-    validarFormato(req.body, true);
-    const actualizado = repo.updateFormato(req.params.id, req.body);
-    if (!actualizado) return res.status(404).json({ error: 'No encontrado' });
-    res.json(actualizado);
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
+  app.post('/api/formatos', (req, res) => {
+    try {
+      validarFormato(req.body);
+      const creado = repo.createFormato(req.body);
+      res.status(201).json(creado);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
 
-app.delete('/api/formatos/:id', (req, res) => {
-  const ok = repo.deleteFormato(req.params.id);
-  if (!ok) return res.status(404).json({ error: 'No encontrado' });
-  res.json({ ok: true });
-});
+  app.put('/api/formatos/:id', (req, res) => {
+    try {
+      validarFormato(req.body, true);
+      const actualizado = repo.updateFormato(req.params.id, req.body);
+      if (!actualizado) return res.status(404).json({ error: 'No encontrado' });
+      res.json(actualizado);
+    } catch (err) {
+      res.status(400).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/formatos/:id', (req, res) => {
+    const ok = repo.deleteFormato(req.params.id);
+    if (!ok) return res.status(404).json({ error: 'No encontrado' });
+    res.json({ ok: true });
+  });
+
+  // ---------------- SPA fallback (React Router) ----------------
+  app.get(/^(?!\/api\/).*/, (req, res) => {
+    res.sendFile(path.join(DIST_DIR, 'index.html'));
+  });
+
+  return app;
+}
 
 function validarFormato(body, esEdicion) {
   if (!body) throw new Error('Datos vacíos');
@@ -81,14 +90,26 @@ function validarFormato(body, esEdicion) {
   }
 }
 
-// ---------------- SPA fallback (React Router) ----------------
-app.get(/^(?!\/api\/).*/, (req, res) => {
-  res.sendFile(path.join(DIST_DIR, 'index.html'));
-});
+// Arranca el servidor y resuelve con el puerto real en el que quedó
+// escuchando (útil para Electron, que pide un puerto libre con 0).
+function startServer(port = process.env.PORT || 3000) {
+  return new Promise((resolve, reject) => {
+    const app = crearApp();
+    const server = app.listen(port, '127.0.0.1', () => {
+      resolve({ server, port: server.address().port });
+    });
+    server.on('error', reject);
+  });
+}
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log('=========================================================');
-  console.log(' Extraccion de Troceria en Rollo - Forestal Tezains');
-  console.log(` Servidor corriendo en: http://localhost:${PORT}`);
-  console.log('=========================================================');
-});
+module.exports = { crearApp, startServer };
+
+// Si se ejecuta directamente (node server.js / npm start), arranca solo.
+if (require.main === module) {
+  startServer().then(({ port }) => {
+    console.log('=========================================================');
+    console.log(' Extraccion de Troceria en Rollo - Forestal Tezains');
+    console.log(` Servidor corriendo en: http://localhost:${port}`);
+    console.log('=========================================================');
+  });
+}

@@ -1,0 +1,33 @@
+name: Build y publicar app de escritorio
+
+# Se ejecuta cada vez que se sube (push) a main. Para que la secretaria
+# reciba una actualización de verdad, hay que subir a la vez un cambio en
+# la versión del package.json (ver README: "Publicar una actualización").
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Compilar y publicar release en GitHub
+        run: npm run electron:publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -10,7 +10,12 @@ const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
 
-const DATA_DIR = path.join(__dirname, '..', 'data');
+// En la app de escritorio (Electron), main.js fija EXTRACCION_DATA_DIR a la
+// carpeta de datos del usuario (userData) antes de requerir este archivo,
+// para que la base de datos viva fuera de la carpeta de instalación y no se
+// pierda ni se sobreescriba con cada actualización. Fuera de Electron (web,
+// desarrollo), se usa la carpeta ../data de siempre.
+const DATA_DIR = process.env.EXTRACCION_DATA_DIR || path.join(__dirname, '..', 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 const DB_PATH = path.join(DATA_DIR, 'extraccion.db');
