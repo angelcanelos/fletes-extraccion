@@ -1,6 +1,6 @@
 {
   "name": "extraccion-fletes",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "App para crear, guardar e imprimir formatos de Extraccion de Troceria en Rollo (Forestal Tezains)",
   "main": "electron/main.js",
   "scripts": {
