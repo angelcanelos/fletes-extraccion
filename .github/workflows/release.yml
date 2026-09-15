@@ -27,10 +27,16 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      # electron-builder publica el release ya como "publicado" (no borrador),
-      # y GitHub exige que el tag de esa versión ya exista de verdad en el
-      # repositorio antes de eso ("Published releases must have a valid tag").
-      - name: Crear tag de versión
+      # Solo compila (genera el .exe, el .blockmap y latest.yml en release/);
+      # no usa el publicador integrado de electron-builder, que resultó
+      # poco confiable subiendo el instalador (125 MB) a GitHub en este
+      # entorno: unas veces subía solo el blockmap, otras el .exe pero sin
+      # latest.yml, etc. Subir los archivos con gh (el CLI oficial de
+      # GitHub, ya instalado en los runners) es mucho más robusto.
+      - name: Compilar la app de escritorio
+        run: npm run electron:build
+
+      - name: Crear el tag de esta versión
         shell: bash
         run: |
           VERSION=$(node -p "require('./package.json').version")
@@ -42,7 +48,25 @@ jobs:
             git push origin "$TAG"
           fi
 
-      - name: Compilar y publicar release en GitHub
-        run: npm run electron:publish
+      - name: Publicar el release en GitHub
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Ya existe un release para $TAG, se suben/actualizan los archivos."
+            gh release upload "$TAG" \
+              "release/Extraccion de Troceria Setup $VERSION.exe" \
+              "release/Extraccion de Troceria Setup $VERSION.exe.blockmap" \
+              "release/latest.yml" \
+              --clobber
+          else
+            gh release create "$TAG" \
+              "release/Extraccion de Troceria Setup $VERSION.exe" \
+              "release/Extraccion de Troceria Setup $VERSION.exe.blockmap" \
+              "release/latest.yml" \
+              --title "$VERSION" \
+              --notes "Actualización automática de Extracción de Trocería."
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
