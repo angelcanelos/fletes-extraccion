@@ -1,0 +1,30 @@
+{
+  "name": "extraccion-fletes",
+  "version": "2.0.0",
+  "description": "App para crear, guardar e imprimir formatos de Extraccion de Troceria en Rollo (Forestal Tezains)",
+  "main": "server.js",
+  "scripts": {
+    "dev:server": "node server.js",
+    "dev": "vite",
+    "build": "vite build",
+    "start": "npm run build && node server.js",
+    "preview": "vite preview"
+  },
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "better-sqlite3": "^13.0.3",
+    "express": "^4.19.2",
+    "lucide-react": "^1.46.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "tailwindcss": "^3.4.13",
+    "vite": "^5.4.8"
+  }
+}

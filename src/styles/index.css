@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  background: theme('colors.fondo');
+  color: #1c2b1a;
+  font-family: "Segoe UI", Arial, Helvetica, sans-serif;
+}
+
+@layer components {
+  .campo-input {
+    @apply rounded-lg border-[1.5px] border-[#dde5d6] px-2.5 py-2 text-sm;
+  }
+  .campo-input:focus {
+    @apply outline-none border-verde;
+  }
+  .form-input {
+    @apply rounded-[10px] border-[1.5px] border-[#dde5d6] px-3 py-2.5 text-[15px] font-sans;
+  }
+  .form-input:focus {
+    @apply outline-none border-verde;
+  }
+}
