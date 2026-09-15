@@ -31,12 +31,16 @@ levantan el servidor en `http://localhost:3000` para abrir desde el navegador. E
 
 ## Qué puedes hacer
 
-- **Inicio**: lista de todos los formatos guardados, con buscador y filtros por grúa, fecha y
-  estado (guardado / pagado). Desde ahí puedes imprimir, editar o eliminar cualquiera.
-- **Nuevo formato**: llena productor, grúa, fecha, metros y precio de cada género, y el
-  descuento de combustible. A la derecha ves la vista previa exactamente como se imprimirá.
-- **Ajustes**: nombres de los géneros, precio por defecto, IVA/ISR por defecto, texto del
-  producto FSC, y la lista de grúas que aparecen como sugerencia.
+- **Inicio**: las grúas se muestran como carpetas (10 por defecto, con su productor fijo);
+  al abrir una se ve la lista de sus formatos. El buscador y los filtros (grúa, fecha, estado)
+  siguen disponibles arriba y, al usarlos, cambian a una lista plana con los resultados de
+  todas las grúas. Desde ahí puedes imprimir, editar o eliminar cualquier formato.
+- **Nuevo formato**: eliges la grúa de una lista — el productor se llena solo, porque cada
+  grúa tiene un productor fijo (se configura en Ajustes). Llena la fecha, metros y precio de
+  cada género, y los ajustes (descuentos o cargos) que apliquen. A la derecha ves la vista
+  previa exactamente como se imprimirá.
+- **Ajustes**: nombres de los géneros y su precio por defecto, IVA/ISR por defecto, texto del
+  producto FSC, y la tabla de grúas con su productor fijo (agregar, quitar o corregir).
 - **Imprimir**: abre el formato ya guardado y usa el botón "Imprimir" (o Ctrl+P). Puedes
   indicarle a tu impresora cuántas copias quieres.
 

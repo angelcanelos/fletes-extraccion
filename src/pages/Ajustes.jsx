@@ -17,11 +17,19 @@ function parseGenerosDefault(json) {
   return [{ nombre: 'PINO', precio: 280 }];
 }
 
+function parseGruas(json) {
+  try {
+    const lista = JSON.parse(json || '[]');
+    if (Array.isArray(lista) && lista.length) return lista.map((g) => ({ grua: g.grua || '', productor: g.productor || '' }));
+  } catch { /* ignora settings corruptos */ }
+  return [{ grua: '', productor: '' }];
+}
+
 const vacio = {
   empresa_nombre: '', fsc_texto: '', etiqueta_extra: '',
   generosDefault: [],
   iva_rate_pct: 16, isr_rate_pct: 1.25,
-  gruas_lista: ''
+  gruas: []
 };
 
 export default function Ajustes() {
@@ -40,7 +48,7 @@ export default function Ajustes() {
         generosDefault: parseGenerosDefault(s.generos_default_json),
         iva_rate_pct: parseFloat(s.iva_rate || 0.16) * 100,
         isr_rate_pct: parseFloat(s.isr_rate || 0.0125) * 100,
-        gruas_lista: s.gruas_lista || ''
+        gruas: parseGruas(s.gruas_json)
       });
       setCargando(false);
     })();
@@ -65,6 +73,21 @@ export default function Ajustes() {
     setDatos((d) => ({ ...d, generosDefault: d.generosDefault.filter((_, i) => i !== idx) }));
   }
 
+  function gruaCampo(idx, campoNombre, value) {
+    setDatos((d) => ({
+      ...d,
+      gruas: d.gruas.map((g, i) => (i === idx ? { ...g, [campoNombre]: value } : g))
+    }));
+  }
+
+  function agregarGrua() {
+    setDatos((d) => ({ ...d, gruas: [...d.gruas, { grua: '', productor: '' }] }));
+  }
+
+  function quitarGrua(idx) {
+    setDatos((d) => ({ ...d, gruas: d.gruas.filter((_, i) => i !== idx) }));
+  }
+
   async function guardar(e) {
     e.preventDefault();
     setGuardando(true);
@@ -80,7 +103,11 @@ export default function Ajustes() {
         ),
         iva_rate: (parseFloat(datos.iva_rate_pct) || 0) / 100,
         isr_rate: (parseFloat(datos.isr_rate_pct) || 0) / 100,
-        gruas_lista: datos.gruas_lista.trim()
+        gruas_json: JSON.stringify(
+          datos.gruas
+            .filter((g) => (g.grua || '').trim())
+            .map((g) => ({ grua: g.grua.trim().toUpperCase(), productor: (g.productor || '').trim().toUpperCase() }))
+        )
       });
       toast.exito('Ajustes guardados correctamente.');
     } catch (err) {
@@ -176,11 +203,46 @@ export default function Ajustes() {
           </p>
         </Panel>
 
-        <Panel titulo="Grúas" icon={Truck}>
-          <Campo label="Lista de grúas (separadas por coma)">
-            <textarea className="form-input" rows={2} value={datos.gruas_lista} onChange={(e) => campo('gruas_lista', e.target.value)} />
-          </Campo>
-          <p className="mt-2 text-xs text-[#6b7a68]">Aparecen como sugerencias al escribir la grúa en un formato nuevo.</p>
+        <Panel titulo="Grúas y productores" icon={Truck}>
+          <p className="mb-3 text-xs text-[#6b7a68]">
+            Cada grúa tiene un productor fijo. Al crear un formato, solo se elige la grúa y el productor se
+            llena solo. Agrega, quita o corrige aquí cuando cambie algún productor.
+          </p>
+          <table className="w-full border-collapse">
+            <thead>
+              <tr>
+                {['Grúa', 'Productor', ''].map((h) => (
+                  <th key={h} className="px-2 py-1 text-left text-xs uppercase text-[#6b7a68]">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {datos.gruas.map((g, i) => (
+                <tr key={i}>
+                  <td className="px-2 py-2"><input className="form-input w-full" placeholder="Ej. GRUA 11" value={g.grua} onChange={(e) => gruaCampo(i, 'grua', e.target.value)} /></td>
+                  <td className="px-2 py-2"><input className="form-input w-full" placeholder="Ej. JUAN PEREZ" value={g.productor} onChange={(e) => gruaCampo(i, 'productor', e.target.value)} /></td>
+                  <td className="px-2 py-2">
+                    <button
+                      type="button"
+                      title="Quitar grúa"
+                      aria-label="Quitar grúa"
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-[#fbe4e1] text-[#c0392b] transition-colors hover:bg-[#f6cfc9] disabled:cursor-not-allowed disabled:opacity-40"
+                      disabled={datos.gruas.length <= 1} onClick={() => quitarGrua(i)}
+                    >
+                      <Trash2 className="h-4 w-4" strokeWidth={2.25} />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <button
+            type="button"
+            className="mt-4 flex items-center gap-2 rounded-full bg-verde-suave px-5 py-3 text-sm font-bold text-verde-fuerte transition-colors hover:bg-verde-borde"
+            onClick={agregarGrua}
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.5} /> Agregar grúa
+          </button>
         </Panel>
 
         <Panel titulo="Logo" icon={ImageIcon}>

@@ -111,7 +111,18 @@ const defaults = {
     { nombre: 'DOBLE ARRASTRE', precio: 150 },
     { nombre: 'TASCATE', precio: 280 }
   ]),
-  gruas_lista: 'GRUA # 1,GRUA # 2,GRUA # 3,GRUA # 4,GRUA # 5,GRUA # 6,GRUA # 7,GRUA # 8,GRUA # 9,GRUA # 10',
+  gruas_json: JSON.stringify([
+    { grua: 'GRUA 1', productor: 'JOSE ANGEL RODRIGUEZ' },
+    { grua: 'GRUA 2', productor: 'FIDENCIO NUÑEZ RAMIREZ' },
+    { grua: 'GRUA 3', productor: 'FRANCISCO ESPINOZA REYES' },
+    { grua: 'GRUA 4', productor: 'RAMON NUÑEZ NUÑEZ' },
+    { grua: 'GRUA 5', productor: 'MARTIN RODRIGUEZ M.' },
+    { grua: 'GRUA 6', productor: 'MARCO ANTONIO REYES' },
+    { grua: 'GRUA 7', productor: 'X' },
+    { grua: 'GRUA 8', productor: 'JOSE ANTONIO VIRREY' },
+    { grua: 'GRUA 9', productor: 'COSME RODRIGUEZ CORRAL' },
+    { grua: 'GRUA 10', productor: 'OCTAVIO VIRREY REYES' }
+  ]),
   logo_path: 'images/logo.png'
 };
 
@@ -121,10 +132,11 @@ const insertManyDefaults = db.transaction((obj) => {
 });
 insertManyDefaults(defaults);
 
-// Limpieza de ajustes viejos de una versión anterior (géneros/descuento fijos)
-// que ya no se usan, para no dejar configuración huérfana en Ajustes.
+// Limpieza de ajustes viejos de una versión anterior (géneros/descuento fijos,
+// lista de grúas en texto plano) que ya no se usan, para no dejar
+// configuración huérfana en Ajustes.
 db.prepare(
-  `DELETE FROM settings WHERE clave IN ('genero1_nombre','genero2_nombre','genero3_nombre','precio_default')`
+  `DELETE FROM settings WHERE clave IN ('genero1_nombre','genero2_nombre','genero3_nombre','precio_default','gruas_lista')`
 ).run();
 
 module.exports = db;

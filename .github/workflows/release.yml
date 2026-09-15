@@ -1,13 +1,16 @@
 name: Build y publicar app de escritorio
 
-# Se ejecuta cada vez que se sube (push) a main. Para que la secretaria
-# reciba una actualización de verdad, hay que subir a la vez un cambio en
-# la versión del package.json (ver README: "Publicar una actualización").
+# PAUSADO A PROPÓSITO: mientras se termina de afinar la subida confiable
+# del instalador (.exe de 125 MB) a GitHub Releases, este workflow ya NO
+# se dispara solo con cada push a main — hay que lanzarlo a mano desde la
+# pestaña Actions ("Run workflow"). Para reactivarlo automáticamente,
+# vuelve a poner el bloque `push:` de abajo (comentado) en `on:`.
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
+  workflow_dispatch: {}
+  # push:
+  #   branches: [main]
+  #   paths-ignore:
+  #     - '**.md'
 
 permissions:
   contents: write

@@ -33,6 +33,14 @@ function generosPorDefecto(settings) {
   return [{ nombre: 'PINO', metros: '', precio: '' }];
 }
 
+function parseGruas(settings) {
+  try {
+    const lista = JSON.parse(settings.gruas_json || '[]');
+    if (Array.isArray(lista)) return lista.filter((g) => g && g.grua);
+  } catch { /* ignora settings corruptos */ }
+  return [];
+}
+
 const datosVacios = {
   productor: '', grua: '', fecha: fechaHoy(), estado: 'guardado',
   generos: [],
@@ -94,6 +102,12 @@ export default function FormatoForm() {
     setDatos((d) => ({ ...d, [name]: value }));
   }
 
+  function seleccionarGrua(nombreGrua) {
+    const gruas = parseGruas(settings);
+    const encontrada = gruas.find((g) => g.grua === nombreGrua);
+    setDatos((d) => ({ ...d, grua: nombreGrua, productor: encontrada ? encontrada.productor : d.productor }));
+  }
+
   function toggleIsr() {
     if (isrActivo) {
       setIsrBackup(datos.isr_rate_pct || isrBackup);
@@ -136,8 +150,8 @@ export default function FormatoForm() {
 
   async function guardar(e) {
     e.preventDefault();
-    if (!datos.productor.trim() || !datos.grua.trim() || !datos.fecha) {
-      setMensaje({ tipo: 'error', texto: 'Falta el productor, la grúa o la fecha.' });
+    if (!datos.grua.trim() || !datos.productor.trim() || !datos.fecha) {
+      setMensaje({ tipo: 'error', texto: 'Falta seleccionar la grúa o falta la fecha.' });
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -181,7 +195,12 @@ export default function FormatoForm() {
     );
   }
 
-  const gruasSugeridas = (settings.gruas_lista || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const gruas = parseGruas(settings);
+  // Si el formato (al editar) tiene una grúa que ya no está en la lista de
+  // Ajustes, se agrega igual como opción para no perder el dato guardado.
+  const opcionesGrua = gruas.some((g) => g.grua === datos.grua) || !datos.grua
+    ? gruas
+    : [...gruas, { grua: datos.grua, productor: datos.productor }];
 
   return (
     <PageLayout
@@ -199,16 +218,16 @@ export default function FormatoForm() {
         <form onSubmit={guardar}>
           <Panel titulo="Datos generales" icon={ClipboardList}>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
-              <Campo label="Productor">
-                <input className="form-input" required placeholder="Ej. Francisca Meza Martínez"
-                  value={datos.productor} onChange={(e) => campo('productor', e.target.value)} />
-              </Campo>
               <Campo label="Grúa">
-                <input className="form-input" required list="lista-gruas" placeholder="Ej. GRUA # 3"
-                  value={datos.grua} onChange={(e) => campo('grua', e.target.value)} />
-                <datalist id="lista-gruas">
-                  {gruasSugeridas.map((g) => <option key={g} value={g} />)}
-                </datalist>
+                <select className="form-input" required value={datos.grua} onChange={(e) => seleccionarGrua(e.target.value)}>
+                  <option value="" disabled>Selecciona una grúa…</option>
+                  {opcionesGrua.map((g) => <option key={g.grua} value={g.grua}>{g.grua}</option>)}
+                </select>
+              </Campo>
+              <Campo label="Productor">
+                <div className="form-input flex items-center bg-[#f4f6f2] text-[#33402f]">
+                  {datos.productor || <span className="text-[#9aa696]">Se llena al elegir la grúa</span>}
+                </div>
               </Campo>
               <Campo label="Fecha">
                 <input type="date" className="form-input" required value={datos.fecha} onChange={(e) => campo('fecha', e.target.value)} />
@@ -220,6 +239,9 @@ export default function FormatoForm() {
                 </select>
               </Campo>
             </div>
+            <p className="mt-2.5 text-xs text-[#6b7a68]">
+              El productor va ligado a la grúa; para cambiarlo entra a Ajustes → Grúas y productores.
+            </p>
           </Panel>
 
           <Panel titulo="Géneros (metros y precio)" icon={Trees}>
