@@ -113,8 +113,8 @@ function configurarAutoUpdater() {
   autoUpdater.on('update-downloaded', () => {
     enviarEstado('Actualización lista. Reiniciando…');
     setTimeout(() => {
-      autoUpdater.quitAndInstall(true, true);
-    }, 1200);
+      autoUpdater.quitAndInstall(false, true);
+    }, 1500);
   });
 
   autoUpdater.on('error', () => {
