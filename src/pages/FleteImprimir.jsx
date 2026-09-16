@@ -74,6 +74,7 @@ export default function FleteImprimir() {
             fecha={flete.fecha}
             lineas={flete.lineas}
             precioFlete={flete.precio_flete}
+            ajustes={flete.ajustes}
             ivaRate={flete.iva_rate}
             retencionRate={flete.retencion_rate}
             isrRate={flete.isr_rate}

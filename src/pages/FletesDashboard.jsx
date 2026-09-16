@@ -12,7 +12,7 @@ import { useToast } from '../components/Toast.jsx';
 
 function totalDe(f, preciosPorGrua) {
   const r = calcularFlete({
-    lineas: f.lineas, precio_flete: f.precio_flete,
+    lineas: f.lineas, precio_flete: f.precio_flete, ajustes: f.ajustes,
     iva_rate: f.iva_rate, retencion_rate: f.retencion_rate, isr_rate: f.isr_rate,
     precios_por_grua: preciosPorGrua
   });

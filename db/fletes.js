@@ -32,11 +32,22 @@ function normalizarLineas(lista) {
     .filter((l) => l.grua || l.folio || l.paraje || l.metros);
 }
 
+function normalizarAjustes(lista) {
+  if (!Array.isArray(lista)) return [];
+  return lista
+    .map((a) => ({
+      etiqueta: String((a && a.etiqueta) || '').trim(),
+      monto: num(a && a.monto)
+    }))
+    .filter((a) => a.etiqueta);
+}
+
 function mapRow(row) {
   if (!row) return row;
   return {
     ...row,
-    lineas: JSON.parse(row.lineas_json || '[]')
+    lineas: JSON.parse(row.lineas_json || '[]'),
+    ajustes: JSON.parse(row.ajustes_json || '[]')
   };
 }
 
@@ -83,14 +94,15 @@ function createFlete(data) {
   const settings = getSettings();
   const ts = nowIso();
   const lineas = normalizarLineas(data.lineas);
+  const ajustes = normalizarAjustes(data.ajustes);
 
   const info = db.prepare(`
     INSERT INTO fletes (
-      folio, fletero, fecha, fecha_texto, lineas_json, precio_flete,
+      folio, fletero, fecha, fecha_texto, lineas_json, precio_flete, ajustes_json,
       iva_rate, retencion_rate, isr_rate, observaciones, estado,
       created_at, updated_at
     ) VALUES (
-      @folio, @fletero, @fecha, @fecha_texto, @lineas_json, @precio_flete,
+      @folio, @fletero, @fecha, @fecha_texto, @lineas_json, @precio_flete, @ajustes_json,
       @iva_rate, @retencion_rate, @isr_rate, @observaciones, @estado,
       @created_at, @updated_at
     )
@@ -101,6 +113,7 @@ function createFlete(data) {
     fecha_texto: data.fecha_texto || null,
     lineas_json: JSON.stringify(lineas),
     precio_flete: num(data.precio_flete),
+    ajustes_json: JSON.stringify(ajustes),
     iva_rate: data.iva_rate != null ? num(data.iva_rate) : num(settings.fletes_iva_rate || 0.16),
     retencion_rate: data.retencion_rate != null ? num(data.retencion_rate) : num(settings.fletes_retencion_rate || 0.04),
     isr_rate: data.isr_rate != null ? num(data.isr_rate) : num(settings.fletes_isr_rate || 0.0125),
@@ -124,6 +137,7 @@ function updateFlete(id, data) {
   const merged = { ...existing, ...data };
   const ts = nowIso();
   const lineas = normalizarLineas(data.lineas !== undefined ? data.lineas : existing.lineas);
+  const ajustes = normalizarAjustes(data.ajustes !== undefined ? data.ajustes : existing.ajustes);
 
   db.prepare(`
     UPDATE fletes SET
@@ -132,6 +146,7 @@ function updateFlete(id, data) {
       fecha_texto = @fecha_texto,
       lineas_json = @lineas_json,
       precio_flete = @precio_flete,
+      ajustes_json = @ajustes_json,
       iva_rate = @iva_rate,
       retencion_rate = @retencion_rate,
       isr_rate = @isr_rate,
@@ -146,6 +161,7 @@ function updateFlete(id, data) {
     fecha_texto: merged.fecha_texto || null,
     lineas_json: JSON.stringify(lineas),
     precio_flete: num(merged.precio_flete),
+    ajustes_json: JSON.stringify(ajustes),
     iva_rate: num(merged.iva_rate),
     retencion_rate: num(merged.retencion_rate),
     isr_rate: num(merged.isr_rate),

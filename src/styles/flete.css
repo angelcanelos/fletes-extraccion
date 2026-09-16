@@ -29,11 +29,11 @@
   position: relative;
   border: 1.4px solid #2f6fa8;
   border-radius: 7px 3px 8px 4px / 4px 8px 3px 7px;
-  padding: 0.35cm 0.7cm;
+  padding: 0.45cm 0.85cm;
   text-align: center;
   font-family: Georgia, "Times New Roman", Times, serif;
   font-weight: 700;
-  font-size: 21px;
+  font-size: 24px;
   line-height: 1.28;
   color: #1c1c1c;
   background: #fff;
@@ -47,10 +47,10 @@
   position: absolute;
   top: 50%;
   right: 100%;
-  width: 2.3cm;
-  height: 4.6cm;
-  border-top-left-radius: 2.3cm;
-  border-bottom-left-radius: 2.3cm;
+  width: 2.6cm;
+  height: 5.2cm;
+  border-top-left-radius: 2.6cm;
+  border-bottom-left-radius: 2.6cm;
   background: rgba(158, 202, 235, 0.65);
   transform: translateY(-50%);
   z-index: -1;
@@ -58,8 +58,8 @@
 
 .ft-logo-decor{
   position: relative;
-  width: 3.1cm;
-  height: 3.1cm;
+  width: 3.6cm;
+  height: 3.6cm;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -76,19 +76,19 @@
   z-index: -1;
 }
 .ft-logo-halo-1{
-  width: 4.1cm;
-  height: 4.1cm;
+  width: 4.6cm;
+  height: 4.6cm;
   background: rgba(174, 212, 238, 0.22);
 }
 .ft-logo-halo-2{
-  width: 5.2cm;
-  height: 5.2cm;
+  width: 5.7cm;
+  height: 5.7cm;
   background: rgba(174, 212, 238, 0.1);
 }
 
 .ft-logo-wrap{
-  width: 3.1cm;
-  height: 3.1cm;
+  width: 3.6cm;
+  height: 3.6cm;
   border-radius: 50%;
   border: 1.6px solid #2f6fa8;
   overflow: hidden;
@@ -155,7 +155,7 @@ table.ft-tabla td{ overflow-wrap: break-word; }
    y las descuadre. */
 .ft-tabla-head{ margin-bottom: 0.22cm; }
 .ft-tabla-head th{ background: rgba(174, 212, 238, 0.4); border-bottom-width: 1.6px; }
-.ft-tabla-body{ margin-bottom: 0.35cm; }
+.ft-tabla-body{ margin-bottom: 0.6cm; }
 
 /* Franjas de lectura: empieza en azul desde el primer viaje y alterna. */
 .ft-fila-azul td{ background: rgba(174, 212, 238, 0.22); }

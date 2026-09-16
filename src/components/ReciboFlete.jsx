@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { calcularFlete, fechaCortaEs } from '../lib/calc.js';
+import { calcularFlete, fechaCortaEs, formatoMonedaConSigno } from '../lib/calc.js';
 
 // Estructura del comprobante "Flete de Madera en Rollo". Usa las clases
 // de src/styles/flete.css (prefijo ft-, independiente de formato.css /
@@ -25,6 +25,7 @@ export default function ReciboFlete({
   fecha,
   lineas,
   precioFlete,
+  ajustes,
   ivaRate,
   retencionRate,
   isrRate,
@@ -33,7 +34,7 @@ export default function ReciboFlete({
 }) {
   const [logoError, setLogoError] = useState(false);
   const r = calcularFlete({
-    lineas, precio_flete: precioFlete, iva_rate: ivaRate, retencion_rate: retencionRate, isr_rate: isrRate,
+    lineas, precio_flete: precioFlete, ajustes, iva_rate: ivaRate, retencion_rate: retencionRate, isr_rate: isrRate,
     precios_por_grua: preciosPorGrua(gruasCatalog)
   });
   const M = (v) => Number(v || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -121,6 +122,9 @@ export default function ReciboFlete({
       <table className="ft-resumen">
         <tbody>
           <tr><td className="ft-label">Flete de madera en rollo</td><td className="ft-val">{M(r.totalFlete)}</td></tr>
+          {r.ajustes.map((a, i) => (
+            <tr key={i}><td className="ft-label">{a.etiqueta}</td><td className="ft-val">{formatoMonedaConSigno(a.monto)}</td></tr>
+          ))}
           <tr><td className="ft-label">Mas pago de iva {pct(ivaPct)} %</td><td className="ft-val">{M(r.iva)}</td></tr>
           {retencionRate > 0 && (
             <tr><td className="ft-label">Menos pago de retencion {pct(retencionPct)} %</td><td className="ft-val">{M(r.retencion)}</td></tr>

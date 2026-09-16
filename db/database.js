@@ -64,6 +64,7 @@ CREATE TABLE IF NOT EXISTS fletes (
 
   lineas_json TEXT NOT NULL DEFAULT '[]',
   precio_flete REAL NOT NULL DEFAULT 0,
+  ajustes_json TEXT NOT NULL DEFAULT '[]',
 
   iva_rate REAL NOT NULL DEFAULT 0.16,
   retencion_rate REAL NOT NULL DEFAULT 0.04,
@@ -89,6 +90,16 @@ CREATE INDEX IF NOT EXISTS idx_fletes_fletero ON fletes(fletero);
     db.exec(`ALTER TABLE formatos ADD COLUMN destino TEXT NOT NULL DEFAULT ''`);
     const previo = db.prepare(`SELECT valor FROM settings WHERE clave = 'etiqueta_extra'`).get();
     db.prepare('UPDATE formatos SET destino = ? WHERE destino = \'\'').run(previo ? previo.valor : 'FORESTAL TEZAINS');
+  }
+}
+
+// Migración: agrega la columna "ajustes_json" a fletes ya existentes
+// (descuentos o cargos adicionales, igual que en formatos). Los fletes
+// viejos quedan sin ajustes (equivalente a "[]").
+{
+  const cols = db.prepare('PRAGMA table_info(fletes)').all().map((c) => c.name);
+  if (!cols.includes('ajustes_json')) {
+    db.exec(`ALTER TABLE fletes ADD COLUMN ajustes_json TEXT NOT NULL DEFAULT '[]'`);
   }
 }
 

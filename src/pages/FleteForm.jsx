@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   Save, X, Plus, Trash2, Loader2, TriangleAlert, Ban, CircleCheck,
-  ClipboardList, Route, Percent, NotebookPen
+  ClipboardList, Route, Percent, NotebookPen, Wallet
 } from 'lucide-react';
 import { Api } from '../lib/api.js';
 import PageLayout from '../components/PageLayout.jsx';
@@ -53,6 +53,7 @@ const datosVacios = {
   fletero: '', fecha: fechaHoy(), estado: 'guardado',
   lineas: [{ ...lineaVacia }],
   precio_flete: '',
+  ajustes: [],
   iva_rate_pct: 16, retencion_rate_pct: 4, isr_rate_pct: 1.25,
   observaciones: ''
 };
@@ -87,6 +88,7 @@ export default function FleteForm() {
             ? f.lineas.map((l) => ({ ...l, metros: ceroVacio(l.metros) }))
             : [{ ...lineaVacia }],
           precio_flete: ceroVacio(f.precio_flete),
+          ajustes: (f.ajustes || []).map((a) => ({ etiqueta: a.etiqueta, monto: ceroVacio(a.monto) })),
           iva_rate_pct: f.iva_rate * 100,
           retencion_rate_pct: f.retencion_rate * 100,
           isr_rate_pct: f.isr_rate * 100,
@@ -155,6 +157,21 @@ export default function FleteForm() {
     setDatos((d) => ({ ...d, lineas: d.lineas.filter((_, i) => i !== idx) }));
   }
 
+  function ajusteCampo(idx, campoNombre, value) {
+    setDatos((d) => {
+      const ajustes = d.ajustes.map((a, i) => (i === idx ? { ...a, [campoNombre]: value } : a));
+      return { ...d, ajustes };
+    });
+  }
+
+  function agregarAjuste() {
+    setDatos((d) => ({ ...d, ajustes: [...d.ajustes, { etiqueta: '', monto: '' }] }));
+  }
+
+  function quitarAjuste(idx) {
+    setDatos((d) => ({ ...d, ajustes: d.ajustes.filter((_, i) => i !== idx) }));
+  }
+
   async function guardar(e) {
     e.preventDefault();
     if (!datos.fletero.trim() || !datos.fecha) {
@@ -170,6 +187,9 @@ export default function FleteForm() {
         .filter((l) => (l.grua || '').trim() || (l.folio || '').trim() || (l.paraje || '').trim() || parseFloat(l.metros))
         .map((l) => ({ fecha: l.fecha, folio: (l.folio || '').trim(), paraje: (l.paraje || '').trim(), grua: (l.grua || '').trim(), metros: parseFloat(l.metros) || 0 })),
       precio_flete: parseFloat(datos.precio_flete) || 0,
+      ajustes: datos.ajustes
+        .filter((a) => (a.etiqueta || '').trim())
+        .map((a) => ({ etiqueta: a.etiqueta.trim(), monto: parseFloat(a.monto) || 0 })),
       iva_rate: (parseFloat(datos.iva_rate_pct) || 0) / 100,
       retencion_rate: retencionActiva ? (parseFloat(datos.retencion_rate_pct) || 0) / 100 : 0,
       isr_rate: isrActivo ? (parseFloat(datos.isr_rate_pct) || 0) / 100 : 0,
@@ -335,6 +355,36 @@ export default function FleteForm() {
             </p>
           </Panel>
 
+          <Panel titulo="Ajustes (descuentos o cargos adicionales)" icon={Wallet}>
+            <p className="mb-3 text-xs text-[#6b7a68]">
+              Agrega solo los ajustes que apliquen a este flete: por ejemplo un descuento o cualquier cargo
+              extra. Un monto negativo se resta, uno positivo se suma; todos afectan el total.
+            </p>
+            {datos.ajustes.length > 0 && (
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    {['Concepto', 'Monto $', ''].map((h) => (
+                      <th key={h} className="px-2 py-1 text-left text-xs uppercase text-[#6b7a68]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {datos.ajustes.map((a, i) => (
+                    <tr key={i}>
+                      <td className="px-2 py-2"><input className="form-input w-full" placeholder="Ej. Descuento por adelanto" value={a.etiqueta} onChange={(e) => ajusteCampo(i, 'etiqueta', e.target.value)} /></td>
+                      <td className="px-2 py-2"><input type="number" step="0.01" className="form-input w-full" placeholder="-500 o 200" value={a.monto} onChange={(e) => ajusteCampo(i, 'monto', e.target.value)} /></td>
+                      <td className="px-2 py-2">
+                        <BotonQuitar onClick={() => quitarAjuste(i)} title="Quitar ajuste" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            <BotonAgregar onClick={agregarAjuste}>Agregar ajuste</BotonAgregar>
+          </Panel>
+
           <Panel titulo="Observaciones (opcional, uso interno)" icon={NotebookPen}>
             <Campo label="">
               <textarea className="form-input" rows={3} placeholder="Notas internas, no se imprimen en el comprobante"
@@ -370,6 +420,7 @@ export default function FleteForm() {
                     fecha={datos.fecha}
                     lineas={datos.lineas}
                     precioFlete={datos.precio_flete}
+                    ajustes={datos.ajustes}
                     ivaRate={(parseFloat(datos.iva_rate_pct) || 0) / 100}
                     retencionRate={retencionActiva ? (parseFloat(datos.retencion_rate_pct) || 0) / 100 : 0}
                     isrRate={isrActivo ? (parseFloat(datos.isr_rate_pct) || 0) / 100 : 0}

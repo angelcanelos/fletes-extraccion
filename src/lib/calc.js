@@ -77,15 +77,19 @@ export function calcularFlete(data) {
     }
   });
 
+  const ajustes = (d.ajustes || []).map((a) => ({ etiqueta: a.etiqueta, monto: num(a.monto) }));
+  const totalAjustes = ajustes.reduce((s, a) => s + a.monto, 0);
+
   const totalMetros = lineas.reduce((s, l) => s + l.metros, 0);
   const totalFlete = grupos.reduce((s, g) => s + g.importe, 0);
-  const iva = totalFlete * ivaRate;
-  const retencion = totalFlete * retencionRate;
-  const isr = totalFlete * isrRate;
-  const total = totalFlete + iva - retencion - isr;
+  const subtotal = totalFlete + totalAjustes;
+  const iva = subtotal * ivaRate;
+  const retencion = subtotal * retencionRate;
+  const isr = subtotal * isrRate;
+  const total = subtotal + iva - retencion - isr;
 
   return {
-    lineas, grupos, totalMetros, precioFlete: precioFleteDefault, totalFlete,
+    lineas, grupos, ajustes, totalAjustes, totalMetros, precioFlete: precioFleteDefault, totalFlete, subtotal,
     ivaRate, retencionRate, isrRate, iva, retencion, isr,
     total, saldoFavor: total
   };
@@ -99,7 +103,7 @@ export function formatoMoneda(v) {
 export function formatoMonedaConSigno(v) {
   const n = num(v);
   const texto = Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  return n < 0 ? `-${texto}` : texto;
+  return `${n < 0 ? '-' : '+'}$${texto}`;
 }
 
 export function fechaLargaEs(iso) {
