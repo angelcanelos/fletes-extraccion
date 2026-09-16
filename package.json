@@ -10,7 +10,7 @@
     "start": "npm run build && node server.js",
     "preview": "vite preview",
     "electron:dev": "npm run build && electron .",
-    "electron:build": "npm run build && electron-builder --win",
+    "electron:build": "npm run build && electron-builder --win --publish never",
     "electron:publish": "npm run build && electron-builder --win --publish always"
   },
   "license": "UNLICENSED",
