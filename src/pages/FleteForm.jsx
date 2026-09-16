@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Save, X, Plus, Trash2, Loader2, TriangleAlert, Ban, CircleCheck,
   ClipboardList, Route, Percent, NotebookPen, Wallet
@@ -61,7 +61,9 @@ const datosVacios = {
 export default function FleteForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const esEdicion = Boolean(id);
+  const fleteroInicial = searchParams.get('fletero') || '';
 
   const [settings, setSettings] = useState({});
   const [datos, setDatos] = useState(datosVacios);
@@ -101,6 +103,7 @@ export default function FleteForm() {
       } else {
         setDatos((d) => ({
           ...d,
+          fletero: fleteroInicial,
           iva_rate_pct: (s.fletes_iva_rate != null ? s.fletes_iva_rate : 0.16) * 100,
           retencion_rate_pct: (s.fletes_retencion_rate != null ? s.fletes_retencion_rate : 0.04) * 100,
           isr_rate_pct: (s.fletes_isr_rate != null ? s.fletes_isr_rate : 0.0125) * 100
@@ -108,7 +111,7 @@ export default function FleteForm() {
       }
       setCargando(false);
     })();
-  }, [id, esEdicion]);
+  }, [id, esEdicion, fleteroInicial]);
 
   function campo(name, value) {
     setDatos((d) => ({ ...d, [name]: value }));

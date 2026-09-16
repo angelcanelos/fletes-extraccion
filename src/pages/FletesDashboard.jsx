@@ -116,7 +116,7 @@ export default function FletesDashboard() {
       title="Fletes de madera en rollo"
       subtitle="Consulta, busca, imprime o crea un nuevo comprobante de flete."
       action={
-        <Link to="/fletes/nuevo" className="inline-flex items-center gap-2 rounded-full bg-verde px-[18px] py-2.5 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte">
+        <Link to={filtros.fletero ? `/fletes/nuevo?fletero=${encodeURIComponent(filtros.fletero)}` : '/fletes/nuevo'} className="inline-flex items-center gap-2 rounded-full bg-verde px-[18px] py-2.5 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte">
           <Plus className="h-4 w-4" strokeWidth={2.5} /> Nuevo flete
         </Link>
       }
