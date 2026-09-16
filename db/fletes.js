@@ -40,13 +40,17 @@ function mapRow(row) {
   };
 }
 
-function listFletes({ q, grua, desde, hasta, estado } = {}) {
+function listFletes({ q, grua, fletero, desde, hasta, estado } = {}) {
   let sql = 'SELECT * FROM fletes WHERE 1=1';
   const params = {};
 
   if (q) {
     sql += ' AND (fletero LIKE @q OR folio LIKE @q OR observaciones LIKE @q OR lineas_json LIKE @q)';
     params.q = `%${q}%`;
+  }
+  if (fletero) {
+    sql += ' AND fletero = @fletero';
+    params.fletero = fletero;
   }
   if (grua) {
     sql += ' AND lineas_json LIKE @grua';

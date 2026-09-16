@@ -69,8 +69,8 @@ function crearApp() {
   // ---------------- API: fletes ----------------
 
   app.get('/api/fletes', (req, res) => {
-    const { q, grua, desde, hasta, estado } = req.query;
-    res.json(repoFletes.listFletes({ q, grua, desde, hasta, estado }));
+    const { q, grua, fletero, desde, hasta, estado } = req.query;
+    res.json(repoFletes.listFletes({ q, grua, fletero, desde, hasta, estado }));
   });
 
   app.get('/api/fletes/stats', (req, res) => {

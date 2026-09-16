@@ -11,6 +11,9 @@ import Panel from '../components/Panel.jsx';
 import Campo from '../components/Campo.jsx';
 import ReciboFormato from '../components/ReciboFormato.jsx';
 import { useToast } from '../components/Toast.jsx';
+import useZoomAjustado from '../hooks/useZoomAjustado.js';
+
+const F_ANCHO_NATURAL_PX = 397; // 10.5cm a 96dpi, ancho real de .hoja
 
 function fechaHoy() {
   return new Date().toISOString().slice(0, 10);
@@ -76,6 +79,7 @@ export default function FormatoForm() {
   const [isrBackup, setIsrBackup] = useState(1.25);
   const [guardando, setGuardando] = useState(false);
   const toast = useToast();
+  const [previewRef, previewZoom] = useZoomAjustado(F_ANCHO_NATURAL_PX);
 
   useEffect(() => {
     (async () => {
@@ -370,8 +374,8 @@ export default function FormatoForm() {
         <div className="lg:sticky lg:top-[90px]">
           <div className="rounded-panel bg-verde-suave p-[18px]">
             <h3 className="m-0 mb-3 text-[15px] text-verde-fuerte">Vista previa</h3>
-            <div className="flex justify-center overflow-auto rounded-panel bg-[#e9efe4] p-[20px_10px]">
-              <div style={{ transform: 'scale(0.82)', transformOrigin: 'top center', marginBottom: '-60px' }}>
+            <div ref={previewRef} className="flex justify-center rounded-panel bg-[#e9efe4] p-[20px_10px]">
+              <div style={{ zoom: previewZoom }}>
                 <div className="shadow-[0_4px_20px_rgba(0,0,0,0.12)]">
                   <ReciboFormato
                     productor={datos.productor}

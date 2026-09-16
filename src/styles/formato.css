@@ -115,15 +115,23 @@
   white-space: nowrap;
 }
 .f-caja--productor{ display: block; margin-bottom: 0.2cm; }
-.f-caja--productor .f-caja-box{ min-width: 78%; font-size: 13.5px; }
+.f-caja--productor .f-caja-box{ min-width: 78%; max-width: 100%; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; }
 
+/* El destino (antes texto fijo "madymsa", ahora un catálogo de largo
+   variable) va en su propia línea debajo del productor, en vez de
+   encimado a su derecha: así nunca se monta con la caja del productor
+   sin importar qué tan largo sea uno u otro. */
 .f-madymsa{
-  position: absolute;
-  right: 0.3cm;
-  top: 0.42cm;
+  display: block;
+  text-align: right;
   font-style: italic;
-  font-size: 10.5px;
+  font-size: 9px;
   color: #111;
+  margin: 0.08cm 0.1cm 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 /* ---------- Tabla de géneros ---------- */
@@ -180,6 +188,13 @@ table.f-tabla tbody td:not(:first-child){ text-align: right; font-weight: 700; }
     print-color-adjust: exact;
     color-adjust: exact;
   }
-  .hoja{ margin: 0 auto; zoom: 1.4; box-shadow: none !important; }
+  /* El comprobante mide 10.5cm x ~17.7cm de alto de forma natural (es
+     más alto que ancho). En una hoja Carta (21.59 x 27.94cm, con 6mm de
+     margen por lado) lo que limita qué tan grande se puede imprimir es
+     el ALTO, no el ancho: con zoom 1.47 mide ~15.4cm de ancho x ~26cm de
+     alto, usando casi toda la hoja sin pasar a una segunda página. Subir
+     el zoom más allá de ~1.5 ya se sale de una hoja Carta.
+   */
+  .hoja{ margin: 0 auto; zoom: 1.47; box-shadow: none !important; }
   @page{ size: auto; margin: 6mm; }
 }

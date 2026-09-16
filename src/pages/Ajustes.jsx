@@ -47,7 +47,8 @@ export default function Ajustes() {
         generos: parseJson(s.generos_default_json, [{ nombre: 'PINO', precio: 280 }]),
         gruas: parseJson(s.gruas_json, [{ grua: '', productor: '', precio_flete: 0 }]),
         destinos: parseJson(s.destinos_json, [{ nombre: 'FORESTAL TEZAINS' }]),
-        fleteros: parseJson(s.fleteros_json, [{ nombre: '' }])
+        fleteros: parseJson(s.fleteros_json, [{ nombre: '' }]),
+        parajes: parseJson(s.parajes_json, [{ nombre: 'RANCHO QUEMADO' }])
       });
       setCargando(false);
     })();
@@ -210,6 +211,16 @@ export default function Ajustes() {
         valorInicial={catalogos.fleteros}
         filaVacia={{ nombre: '' }}
         campos={[{ key: 'nombre', label: 'Fletero', tipo: 'text', placeholder: 'Ej. JUAN PEREZ' }]}
+      />
+
+      <CatalogoEditor
+        icon={MapPin}
+        titulo="Parajes"
+        descripcion="Lugares de origen de la madera, elegibles por cada viaje en el comprobante de Fletes."
+        settingsKey="parajes_json"
+        valorInicial={catalogos.parajes}
+        filaVacia={{ nombre: '' }}
+        campos={[{ key: 'nombre', label: 'Paraje', tipo: 'text', placeholder: 'Ej. RANCHO QUEMADO' }]}
       />
     </PageLayout>
   );

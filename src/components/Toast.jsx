@@ -33,7 +33,7 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={api}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex flex-col items-center gap-2 px-4 sm:bottom-5">
+      <div className="no-imprimir pointer-events-none fixed inset-x-0 bottom-4 z-[100] flex flex-col items-center gap-2 px-4 sm:bottom-5">
         {toasts.map((t) => {
           const cfg = ESTILOS[t.tipo] || ESTILOS.info;
           const Icon = cfg.icon;

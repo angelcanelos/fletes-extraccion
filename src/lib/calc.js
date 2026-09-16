@@ -42,23 +42,50 @@ export function calcularFormato(data) {
 
 // Cálculo del flete de madera en rollo.
 //   lineas: [{ fecha, folio, paraje, grua, metros }, ...]
+//   precios_por_grua: { 'GRUA 1': 290.76, ... } — precio del catálogo de
+//     grúas (Ajustes). Si una línea trae una grúa que está en el catálogo,
+//     su precio manda; si no (grúa vacía o sin catálogo), se usa
+//     precio_flete como valor por defecto. Esto permite un flete con
+//     viajes de varias grúas distintas, cada una a su propio precio.
 export function calcularFlete(data) {
   const d = data || {};
   const ivaRate = d.iva_rate != null ? num(d.iva_rate) : 0.16;
   const retencionRate = d.retencion_rate != null ? num(d.retencion_rate) : 0.04;
   const isrRate = d.isr_rate != null ? num(d.isr_rate) : 0.0125;
-  const precioFlete = num(d.precio_flete);
+  const precioFleteDefault = num(d.precio_flete);
+  const preciosPorGrua = d.precios_por_grua || {};
 
-  const lineas = (d.lineas || []).map((l) => ({ ...l, metros: num(l.metros) }));
+  const lineas = (d.lineas || []).map((l) => {
+    const metros = num(l.metros);
+    const grua = (l.grua || '').trim();
+    const precio = (grua && preciosPorGrua[grua] != null) ? num(preciosPorGrua[grua]) : precioFleteDefault;
+    return { ...l, metros, grua, precio };
+  });
+
+  // Agrupa viajes consecutivos de la misma grúa (al mismo precio) para
+  // mostrar un subtotal de metros por grúa, como en el comprobante físico
+  // cuando un fletero trae viajes de varias grúas en el mismo periodo.
+  const grupos = [];
+  lineas.forEach((l, i) => {
+    const anterior = grupos[grupos.length - 1];
+    if (anterior && anterior.grua === l.grua && anterior.precio === l.precio) {
+      anterior.metros += l.metros;
+      anterior.importe = anterior.metros * anterior.precio;
+      anterior.finIndex = i;
+    } else {
+      grupos.push({ grua: l.grua, precio: l.precio, metros: l.metros, importe: l.metros * l.precio, inicioIndex: i, finIndex: i });
+    }
+  });
+
   const totalMetros = lineas.reduce((s, l) => s + l.metros, 0);
-  const totalFlete = totalMetros * precioFlete;
+  const totalFlete = grupos.reduce((s, g) => s + g.importe, 0);
   const iva = totalFlete * ivaRate;
   const retencion = totalFlete * retencionRate;
   const isr = totalFlete * isrRate;
   const total = totalFlete + iva - retencion - isr;
 
   return {
-    lineas, totalMetros, precioFlete, totalFlete,
+    lineas, grupos, totalMetros, precioFlete: precioFleteDefault, totalFlete,
     ivaRate, retencionRate, isrRate, iva, retencion, isr,
     total, saldoFavor: total
   };

@@ -163,7 +163,31 @@ const defaults = {
     { nombre: 'FORESTAL TEZAINS' }
   ]),
   fleteros_json: JSON.stringify([
-    { nombre: 'ELEAZAR BARRAZA NEVAREZ' }
+    { nombre: 'FIDENCIO NUÑEZ RAMIREZ' },
+    { nombre: 'LEONEL RIVERA RODRIGUEZ' },
+    { nombre: 'RAMON NUÑEZ NUÑEZ' },
+    { nombre: 'EMILIO RIVERA RODRIGUEZ' },
+    { nombre: 'MARCO ANTONIO REYES QUINTERO' },
+    { nombre: 'SEVERIANO REYES ACOSTA' },
+    { nombre: 'MARTIN RODRIGUEZ RODRIGUEZ' },
+    { nombre: 'NOE DE LA CRUZ NUÑEZ' },
+    { nombre: 'ADAN DE LA CRUZ NUÑEZ' },
+    { nombre: 'MARIO RODRIGUEZ MONTENEGRO' },
+    { nombre: 'GABRIEL NUÑEZ NUÑEZ' },
+    { nombre: 'JANETH ESTRADA BLANCO' },
+    { nombre: 'CARLOS RODRIGUEZ NUÑEZ' },
+    { nombre: 'OCTAVIO VIRREY REYES' },
+    { nombre: 'SIMON REYES ACOSTA' },
+    { nombre: 'COSME RODRIGUEZ CORRAL' },
+    { nombre: 'JOSE ANGEL RODRIGUEZ NUÑEZ' },
+    { nombre: 'JESUS OMAR RODRIGUEZ VIRREY' },
+    { nombre: 'PEDRO REYES ROJO' },
+    { nombre: 'ELEAZAR BARRAZA NEVAREZ' },
+    { nombre: 'BALDOMERO SANCHEZ VIRREY' },
+    { nombre: 'ELIAS MEZA MARTINEZ' }
+  ]),
+  parajes_json: JSON.stringify([
+    { nombre: 'RANCHO QUEMADO' }
   ]),
   fletes_iva_rate: '0.16',
   fletes_retencion_rate: '0.04',
@@ -188,6 +212,27 @@ insertManyDefaults(defaults);
       if (Array.isArray(lista) && lista.some((g) => g && g.precio_flete === undefined)) {
         const completa = lista.map((g) => ({ ...g, precio_flete: g.precio_flete != null ? g.precio_flete : 0 }));
         db.prepare(`UPDATE settings SET valor = ? WHERE clave = 'gruas_json'`).run(JSON.stringify(completa));
+      }
+    } catch { /* ignora json corrupto */ }
+  }
+}
+
+// Migración: agrega al catálogo de fleteros ya guardado los nombres nuevos
+// que no estaban capturados todavía, sin duplicar ni perder los que la
+// secretaria ya haya agregado a mano desde Ajustes.
+{
+  const fila = db.prepare(`SELECT valor FROM settings WHERE clave = 'fleteros_json'`).get();
+  if (fila) {
+    try {
+      const actual = JSON.parse(fila.valor || '[]');
+      const nuevos = JSON.parse(defaults.fleteros_json);
+      if (Array.isArray(actual)) {
+        const yaExiste = new Set(actual.map((f) => (f && f.nombre || '').trim().toUpperCase()));
+        const faltantes = nuevos.filter((f) => !yaExiste.has(f.nombre.trim().toUpperCase()));
+        if (faltantes.length) {
+          db.prepare(`UPDATE settings SET valor = ? WHERE clave = 'fleteros_json'`)
+            .run(JSON.stringify([...actual, ...faltantes]));
+        }
       }
     } catch { /* ignora json corrupto */ }
   }

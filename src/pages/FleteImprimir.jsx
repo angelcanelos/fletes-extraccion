@@ -4,17 +4,27 @@ import { ArrowLeft, Printer, Loader2, FileWarning } from 'lucide-react';
 import { Api } from '../lib/api.js';
 import ReciboFlete from '../components/ReciboFlete.jsx';
 
+function parseGruas(json) {
+  try {
+    const lista = JSON.parse(json || '[]');
+    if (Array.isArray(lista)) return lista.filter((g) => g && g.grua);
+  } catch { /* ignora settings corruptos */ }
+  return [];
+}
+
 export default function FleteImprimir() {
   const { id } = useParams();
   const [flete, setFlete] = useState(null);
+  const [gruas, setGruas] = useState([]);
   const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!id) { setError(true); return; }
     (async () => {
       try {
-        const f = await Api.obtenerFlete(id);
+        const [f, s] = await Promise.all([Api.obtenerFlete(id), Api.obtenerSettings()]);
         setFlete(f);
+        setGruas(parseGruas(s.gruas_json));
         document.title = `Flete ${f.folio || f.id} - ${f.fletero}`;
       } catch {
         setError(true);
@@ -67,6 +77,7 @@ export default function FleteImprimir() {
             ivaRate={flete.iva_rate}
             retencionRate={flete.retencion_rate}
             isrRate={flete.isr_rate}
+            gruasCatalog={gruas}
           />
         </div>
       )}

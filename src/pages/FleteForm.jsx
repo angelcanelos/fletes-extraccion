@@ -10,6 +10,9 @@ import Panel from '../components/Panel.jsx';
 import Campo from '../components/Campo.jsx';
 import ReciboFlete from '../components/ReciboFlete.jsx';
 import { useToast } from '../components/Toast.jsx';
+import useZoomAjustado from '../hooks/useZoomAjustado.js';
+
+const FT_ANCHO_NATURAL_PX = 719; // 19cm a 96dpi, ancho real de .ft-hoja
 
 function fechaHoy() {
   return new Date().toISOString().slice(0, 10);
@@ -32,6 +35,14 @@ function parseFleteros(settings) {
   try {
     const lista = JSON.parse(settings.fleteros_json || '[]');
     if (Array.isArray(lista)) return lista.filter((f) => f && f.nombre);
+  } catch { /* ignora settings corruptos */ }
+  return [];
+}
+
+function parseParajes(settings) {
+  try {
+    const lista = JSON.parse(settings.parajes_json || '[]');
+    if (Array.isArray(lista)) return lista.filter((p) => p && p.nombre);
   } catch { /* ignora settings corruptos */ }
   return [];
 }
@@ -61,6 +72,7 @@ export default function FleteForm() {
   const [isrBackup, setIsrBackup] = useState(1.25);
   const [guardando, setGuardando] = useState(false);
   const toast = useToast();
+  const [previewRef, previewZoom] = useZoomAjustado(FT_ANCHO_NATURAL_PX);
 
   useEffect(() => {
     (async () => {
@@ -180,7 +192,7 @@ export default function FleteForm() {
 
   if (cargando) {
     return (
-      <PageLayout title={esEdicion ? 'Editar flete' : 'Nuevo flete'}>
+      <PageLayout title={esEdicion ? 'Editar flete' : 'Nuevo flete'} ancho="completo">
         <div className="flex items-center justify-center gap-2.5 p-10 text-center text-[#6b7a68]">
           <Loader2 className="h-5 w-5 animate-spin" strokeWidth={2.25} /> Cargando…
         </div>
@@ -193,11 +205,13 @@ export default function FleteForm() {
     ? fleteros
     : [...fleteros, { nombre: datos.fletero }];
   const gruas = parseGruas(settings);
+  const parajes = parseParajes(settings);
 
   return (
     <PageLayout
       title={esEdicion ? 'Editar flete' : 'Nuevo flete'}
       subtitle="Llena los datos y revisa la vista previa: así se verá e imprimirá el comprobante."
+      ancho="completo"
     >
       {mensaje && (
         <div className={`mb-4 flex items-start gap-2.5 rounded-[10px] px-4 py-3 text-sm ${mensaje.tipo === 'error' ? 'bg-[#fbe4e1] text-[#c0392b]' : 'bg-[#dff3e3] text-[#1f7a3d]'}`}>
@@ -206,8 +220,8 @@ export default function FleteForm() {
         </div>
       )}
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-        <form onSubmit={guardar}>
+      <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[1.4fr_0.9fr]">
+        <form onSubmit={guardar} className="min-w-0">
           <Panel titulo="Datos generales" icon={ClipboardList}>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
               <Campo label="Fletero">
@@ -232,34 +246,49 @@ export default function FleteForm() {
           </Panel>
 
           <Panel titulo="Viajes (fecha, folio, paraje, grúa y metros)" icon={Route}>
-            <table className="mt-2 w-full border-collapse">
-              <thead>
-                <tr>
-                  {['Fecha', 'Folio', 'Paraje', 'Grúa', 'Metros', ''].map((h) => (
-                    <th key={h} className="px-2 py-1 text-left text-xs uppercase text-[#6b7a68]">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {datos.lineas.map((l, i) => (
-                  <tr key={i}>
-                    <td className="px-2 py-2"><input type="date" className="form-input w-full" value={l.fecha} onChange={(e) => lineaCampo(i, 'fecha', e.target.value)} /></td>
-                    <td className="px-2 py-2"><input className="form-input w-full" placeholder="2212 0189" value={l.folio} onChange={(e) => lineaCampo(i, 'folio', e.target.value)} /></td>
-                    <td className="px-2 py-2"><input className="form-input w-full" placeholder="Ej. RANCHO QUEMADO" value={l.paraje} onChange={(e) => lineaCampo(i, 'paraje', e.target.value)} /></td>
-                    <td className="px-2 py-2">
-                      <select className="form-input w-full" value={l.grua} onChange={(e) => lineaCampo(i, 'grua', e.target.value)}>
-                        <option value="">—</option>
-                        {gruas.map((g) => <option key={g.grua} value={g.grua}>{g.grua}</option>)}
-                      </select>
-                    </td>
-                    <td className="px-2 py-2"><input type="number" step="0.001" className="form-input w-full" placeholder="0" value={l.metros} onChange={(e) => lineaCampo(i, 'metros', e.target.value)} /></td>
-                    <td className="px-2 py-2">
-                      <BotonQuitar disabled={datos.lineas.length <= 1} onClick={() => quitarLinea(i)} title="Quitar viaje" />
-                    </td>
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full min-w-[980px] border-collapse">
+                <thead>
+                  <tr>
+                    {['Fecha', 'Folio', 'Paraje', 'Grúa', 'Metros', ''].map((h) => (
+                      <th key={h} className="px-2 py-1 text-left text-xs uppercase text-[#6b7a68]">{h}</th>
+                    ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {datos.lineas.map((l, i) => {
+                    const opcionesParaje = parajes.some((p) => p.nombre === l.paraje) || !l.paraje
+                      ? parajes
+                      : [...parajes, { nombre: l.paraje }];
+                    return (
+                    <tr key={i}>
+                      <td className="w-[170px] px-2 py-2"><input type="date" className="form-input w-full" value={l.fecha} onChange={(e) => lineaCampo(i, 'fecha', e.target.value)} /></td>
+                      <td className="w-[150px] px-2 py-2"><input className="form-input w-full" placeholder="2212 0189" value={l.folio} onChange={(e) => lineaCampo(i, 'folio', e.target.value)} /></td>
+                      <td className="min-w-[220px] px-2 py-2">
+                        <select className="form-input w-full" value={l.paraje} onChange={(e) => lineaCampo(i, 'paraje', e.target.value)}>
+                          <option value="">Selecciona…</option>
+                          {opcionesParaje.map((p) => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
+                        </select>
+                      </td>
+                      <td className="w-[160px] px-2 py-2">
+                        <select className="form-input w-full" value={l.grua} onChange={(e) => lineaCampo(i, 'grua', e.target.value)}>
+                          <option value="">—</option>
+                          {gruas.map((g) => <option key={g.grua} value={g.grua}>{g.grua}</option>)}
+                        </select>
+                      </td>
+                      <td className="w-[130px] px-2 py-2"><input type="number" step="0.001" className="form-input w-full" placeholder="0" value={l.metros} onChange={(e) => lineaCampo(i, 'metros', e.target.value)} /></td>
+                      <td className="w-[56px] px-2 py-2">
+                        <BotonQuitar disabled={datos.lineas.length <= 1} onClick={() => quitarLinea(i)} title="Quitar viaje" />
+                      </td>
+                    </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-2.5 text-xs text-[#6b7a68]">
+              El paraje se administra en Ajustes → Catálogos.
+            </p>
             <BotonAgregar onClick={agregarLinea}>Agregar viaje</BotonAgregar>
           </Panel>
 
@@ -299,8 +328,10 @@ export default function FleteForm() {
               </div>
             </div>
             <p className="mt-2.5 text-xs text-[#6b7a68]">
-              El precio se sugiere solo al elegir la grúa del primer viaje; siempre se puede ajustar a mano.
-              La retención y el ISR son opcionales — algunos fletes no los llevan.
+              Cada viaje usa el precio de su propia grúa (catálogo en Ajustes). Si un flete trae viajes de
+              varias grúas, el comprobante calcula el subtotal de metros y el total de cada una por separado.
+              Este precio manual solo se usa si un viaje no tiene grúa del catálogo. La retención y el ISR
+              son opcionales — algunos fletes no los llevan.
             </p>
           </Panel>
 
@@ -328,11 +359,11 @@ export default function FleteForm() {
           </div>
         </form>
 
-        <div className="lg:sticky lg:top-[90px]">
+        <div className="min-w-0 lg:sticky lg:top-[90px]">
           <div className="rounded-panel bg-verde-suave p-[18px]">
             <h3 className="m-0 mb-3 text-[15px] text-verde-fuerte">Vista previa</h3>
-            <div className="flex justify-center overflow-auto rounded-panel bg-[#e9efe4] p-[20px_10px]">
-              <div style={{ transform: 'scale(0.55)', transformOrigin: 'top center', marginBottom: '-260px' }}>
+            <div ref={previewRef} className="flex justify-center rounded-panel bg-[#e9efe4] p-[20px_10px]">
+              <div style={{ zoom: previewZoom }}>
                 <div className="shadow-[0_4px_20px_rgba(0,0,0,0.12)]">
                   <ReciboFlete
                     fletero={datos.fletero}
@@ -342,6 +373,7 @@ export default function FleteForm() {
                     ivaRate={(parseFloat(datos.iva_rate_pct) || 0) / 100}
                     retencionRate={retencionActiva ? (parseFloat(datos.retencion_rate_pct) || 0) / 100 : 0}
                     isrRate={isrActivo ? (parseFloat(datos.isr_rate_pct) || 0) / 100 : 0}
+                    gruasCatalog={gruas}
                   />
                 </div>
               </div>
