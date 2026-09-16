@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
   Building2, Percent, ImageIcon, Layers, Trees, Truck, MapPin, UserRound,
-  Save, Loader2
+  Save, Loader2, Cloud, CheckCircle2, XCircle, RefreshCw
 } from 'lucide-react';
 import { Api } from '../lib/api.js';
 import PageLayout from '../components/PageLayout.jsx';
 import Panel from '../components/Panel.jsx';
 import Campo from '../components/Campo.jsx';
-import CatalogoEditor from '../components/CatalogoEditor.jsx';
+import CatalogoEditor, { Switch } from '../components/CatalogoEditor.jsx';
 import { useToast } from '../components/Toast.jsx';
 
 function parseJson(json, fallback) {
@@ -24,11 +24,23 @@ const generalVacio = {
   fletes_iva_rate_pct: 16, fletes_retencion_rate_pct: 4, fletes_isr_rate_pct: 1.25
 };
 
+const nubeVacia = { supabase_enabled: false, supabase_url: '', supabase_key: '' };
+
+function formatearFecha(iso) {
+  if (!iso) return 'nunca';
+  return new Date(iso).toLocaleString('es-MX', { dateStyle: 'short', timeStyle: 'short' });
+}
+
 export default function Ajustes() {
   const [general, setGeneral] = useState(generalVacio);
   const [catalogos, setCatalogos] = useState(null);
+  const [nube, setNube] = useState(nubeVacia);
+  const [syncStatus, setSyncStatus] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [guardandoGeneral, setGuardandoGeneral] = useState(false);
+  const [guardandoNube, setGuardandoNube] = useState(false);
+  const [probando, setProbando] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
   const toast = useToast();
 
   useEffect(() => {
@@ -50,12 +62,80 @@ export default function Ajustes() {
         fleteros: parseJson(s.fleteros_json, [{ nombre: '' }]),
         parajes: parseJson(s.parajes_json, [{ nombre: 'RANCHO QUEMADO' }])
       });
+      setNube({
+        supabase_enabled: s.supabase_enabled === 'true',
+        supabase_url: s.supabase_url || '',
+        supabase_key: s.supabase_key || ''
+      });
       setCargando(false);
     })();
   }, []);
 
+  useEffect(() => {
+    let activo = true;
+    async function refrescarEstado() {
+      try {
+        const estado = await Api.obtenerSyncStatus();
+        if (activo) setSyncStatus(estado);
+      } catch { /* sin conexión con el propio servidor local: ignorar */ }
+    }
+    refrescarEstado();
+    const intervalo = setInterval(refrescarEstado, 30000);
+    return () => { activo = false; clearInterval(intervalo); };
+  }, []);
+
   function campoGeneral(name, value) {
     setGeneral((d) => ({ ...d, [name]: value }));
+  }
+
+  function campoNube(name, value) {
+    setNube((d) => ({ ...d, [name]: value }));
+  }
+
+  async function guardarNube(e) {
+    e.preventDefault();
+    setGuardandoNube(true);
+    try {
+      await Api.actualizarSettings({
+        supabase_enabled: nube.supabase_enabled ? 'true' : 'false',
+        supabase_url: nube.supabase_url.trim(),
+        supabase_key: nube.supabase_key.trim()
+      });
+      toast.exito('Respaldo en la nube: ajustes guardados.');
+      const estado = await Api.obtenerSyncStatus();
+      setSyncStatus(estado);
+    } catch (err) {
+      toast.error(err.message || 'No se pudo guardar la configuración de Supabase.');
+    } finally {
+      setGuardandoNube(false);
+    }
+  }
+
+  async function probarConexion() {
+    setProbando(true);
+    try {
+      const resultado = await Api.probarConexionSupabase(nube.supabase_url.trim(), nube.supabase_key.trim());
+      if (resultado.ok) toast.exito('Conexión con Supabase correcta.');
+      else toast.error(resultado.error || 'No se pudo conectar con Supabase.');
+    } catch {
+      toast.error('No se pudo conectar con Supabase.');
+    } finally {
+      setProbando(false);
+    }
+  }
+
+  async function sincronizarAhora() {
+    setSincronizando(true);
+    try {
+      const estado = await Api.sincronizarAhora();
+      setSyncStatus(estado);
+      if (estado.ultimoError) toast.error(estado.ultimoError);
+      else toast.exito('Sincronización con Supabase completada.');
+    } catch {
+      toast.error('No se pudo sincronizar con Supabase.');
+    } finally {
+      setSincronizando(false);
+    }
   }
 
   async function guardarGeneral(e) {
@@ -155,6 +235,98 @@ export default function Ajustes() {
             Guardar ajustes generales
           </button>
         </div>
+      </form>
+
+      <form onSubmit={guardarNube}>
+        <Panel titulo="Respaldo en la nube (Supabase)" icon={Cloud}>
+          <p className="mb-3 text-xs text-[#6b7a68]">
+            Además de guardarse en esta computadora, cada formato y flete se puede subir automáticamente a
+            Supabase como copia de seguridad. Se sube solo (al abrir la app, al guardar algo, y cada rato de
+            fondo) cuando hay internet; si no hay conexión, no pasa nada y se reintenta después. Esta
+            computadora sigue siendo la única fuente de verdad — Supabase es solo el respaldo.
+          </p>
+
+          <div className="mb-4 flex items-center gap-3">
+            <Switch checked={nube.supabase_enabled} onChange={(val) => campoNube('supabase_enabled', val)} />
+            <span className="text-sm font-bold text-[#33402f]">Activar respaldo en la nube</span>
+          </div>
+
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+            <Campo label="URL del proyecto Supabase">
+              <input
+                className="form-input"
+                placeholder="https://xxxxx.supabase.co"
+                value={nube.supabase_url}
+                onChange={(e) => campoNube('supabase_url', e.target.value)}
+              />
+            </Campo>
+            <Campo label="Clave (service_role)">
+              <input
+                type="password"
+                className="form-input"
+                placeholder="••••••••••••"
+                value={nube.supabase_key}
+                onChange={(e) => campoNube('supabase_key', e.target.value)}
+              />
+            </Campo>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              disabled={probando || !nube.supabase_url.trim() || !nube.supabase_key.trim()}
+              onClick={probarConexion}
+              className="flex items-center gap-2 rounded-full bg-verde-suave px-5 py-3 text-sm font-bold text-verde-fuerte transition-colors hover:bg-verde-borde disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {probando ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : <Cloud className="h-4 w-4" strokeWidth={2.5} />}
+              Probar conexión
+            </button>
+            <button
+              type="submit"
+              disabled={guardandoNube}
+              className="flex items-center gap-2 rounded-full bg-verde px-5 py-3 text-sm font-bold text-white transition-colors hover:bg-verde-fuerte disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {guardandoNube ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : <Save className="h-4 w-4" strokeWidth={2.5} />}
+              Guardar
+            </button>
+            {syncStatus && syncStatus.habilitado && syncStatus.configurado && (
+              <button
+                type="button"
+                disabled={sincronizando}
+                onClick={sincronizarAhora}
+                className="flex items-center gap-2 rounded-full bg-verde-suave px-5 py-3 text-sm font-bold text-verde-fuerte transition-colors hover:bg-verde-borde disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {sincronizando ? <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2.5} /> : <RefreshCw className="h-4 w-4" strokeWidth={2.5} />}
+                Sincronizar ahora
+              </button>
+            )}
+          </div>
+
+          {syncStatus && (
+            <div className="mt-4 flex flex-col gap-1 text-xs text-[#6b7a68]">
+              {!syncStatus.habilitado ? (
+                <span>El respaldo en la nube está desactivado.</span>
+              ) : !syncStatus.configurado ? (
+                <span>Falta la URL o la clave del proyecto.</span>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    {syncStatus.ultimoError ? (
+                      <XCircle className="h-4 w-4 text-[#c0392b]" strokeWidth={2.25} />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 text-verde-fuerte" strokeWidth={2.25} />
+                    )}
+                    Última sincronización correcta: {formatearFecha(syncStatus.ultimoExito)}
+                  </div>
+                  {syncStatus.ultimoError && <div className="text-[#c0392b]">Último error: {syncStatus.ultimoError}</div>}
+                  <div>
+                    Pendientes de subir: {(syncStatus.pendientes?.formatos || 0) + (syncStatus.pendientes?.fletes || 0)}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </Panel>
       </form>
 
       <div className="mb-4 mt-8 flex items-center gap-2 border-b-2 border-verde pb-2">

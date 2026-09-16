@@ -91,5 +91,23 @@ export const Api = {
   async statsFletes() {
     const res = await fetch('/api/fletes/stats');
     return res.json();
+  },
+
+  // ---------------- Respaldo en la nube (Supabase) ----------------
+  async obtenerSyncStatus() {
+    const res = await fetch('/api/sync/status');
+    return res.json();
+  },
+  async sincronizarAhora() {
+    const res = await fetch('/api/sync/ahora', { method: 'POST' });
+    return res.json();
+  },
+  async probarConexionSupabase(url, key) {
+    const res = await fetch('/api/sync/probar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, key })
+    });
+    return res.json();
   }
 };

@@ -4,7 +4,7 @@ import { Api } from '../lib/api.js';
 import Panel from './Panel.jsx';
 import { useToast } from './Toast.jsx';
 
-function Switch({ checked, onChange }) {
+export function Switch({ checked, onChange }) {
   return (
     <button
       type="button"

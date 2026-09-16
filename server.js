@@ -2,6 +2,17 @@ const express = require('express');
 const path = require('path');
 const repo = require('./db/formatos');
 const repoFletes = require('./db/fletes');
+const supabaseSync = require('./db/supabaseSync');
+
+const INTERVALO_SYNC_MS = 10 * 60 * 1000;
+
+// Dispara el respaldo a Supabase sin bloquear ni romper la respuesta HTTP
+// que ya se envió al usuario. Cualquier falla (sin internet, credenciales
+// mal puestas, etc.) se queda registrada en supabaseSync.estado() para la
+// pantalla de Ajustes, y se reintenta en el próximo guardado o intervalo.
+function dispararSync() {
+  supabaseSync.sincronizar().catch(() => { /* ver supabaseSync.estado() */ });
+}
 
 const DIST_DIR = path.join(__dirname, 'dist');
 
@@ -44,6 +55,7 @@ function crearApp() {
       validarFormato(req.body);
       const creado = repo.createFormato(req.body);
       res.status(201).json(creado);
+      dispararSync();
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -55,6 +67,7 @@ function crearApp() {
       const actualizado = repo.updateFormato(req.params.id, req.body);
       if (!actualizado) return res.status(404).json({ error: 'No encontrado' });
       res.json(actualizado);
+      dispararSync();
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -88,6 +101,7 @@ function crearApp() {
       validarFlete(req.body);
       const creado = repoFletes.createFlete(req.body);
       res.status(201).json(creado);
+      dispararSync();
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -99,6 +113,7 @@ function crearApp() {
       const actualizado = repoFletes.updateFlete(req.params.id, req.body);
       if (!actualizado) return res.status(404).json({ error: 'No encontrado' });
       res.json(actualizado);
+      dispararSync();
     } catch (err) {
       res.status(400).json({ error: err.message });
     }
@@ -108,6 +123,23 @@ function crearApp() {
     const ok = repoFletes.deleteFlete(req.params.id);
     if (!ok) return res.status(404).json({ error: 'No encontrado' });
     res.json({ ok: true });
+  });
+
+  // ---------------- API: respaldo en la nube (Supabase) ----------------
+
+  app.get('/api/sync/status', (req, res) => {
+    res.json(supabaseSync.estado());
+  });
+
+  app.post('/api/sync/ahora', async (req, res) => {
+    const resultado = await supabaseSync.sincronizar();
+    res.json(resultado);
+  });
+
+  app.post('/api/sync/probar', async (req, res) => {
+    const { url, key } = req.body || {};
+    const resultado = await supabaseSync.probarConexion(url, key);
+    res.json(resultado);
   });
 
   // ---------------- SPA fallback (React Router) ----------------
@@ -153,6 +185,13 @@ function startServer(port = process.env.PORT || 3000) {
   return new Promise((resolve, reject) => {
     const app = crearApp();
     const server = app.listen(port, '127.0.0.1', () => {
+      // Al abrir la app: si hay internet y el respaldo está configurado,
+      // sube de una vez lo que haya quedado pendiente de la sesión
+      // anterior. Y por si se abrió sin internet, reintenta cada rato para
+      // no depender de que la secretaria vuelva a guardar algo.
+      dispararSync();
+      const intervalo = setInterval(dispararSync, INTERVALO_SYNC_MS);
+      server.on('close', () => clearInterval(intervalo));
       resolve({ server, port: server.address().port });
     });
     server.on('error', reject);

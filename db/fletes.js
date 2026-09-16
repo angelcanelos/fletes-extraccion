@@ -2,6 +2,7 @@
 // Mismo patrón que db/formatos.js: toda la app habla con la base de datos
 // solo a través de estas funciones.
 
+const crypto = require('crypto');
 const db = require('./database');
 const { getSettings } = require('./formatos');
 
@@ -100,11 +101,11 @@ function createFlete(data) {
     INSERT INTO fletes (
       folio, fletero, fecha, fecha_texto, lineas_json, precio_flete, ajustes_json,
       iva_rate, retencion_rate, isr_rate, observaciones, estado,
-      created_at, updated_at
+      created_at, updated_at, uuid, synced_at
     ) VALUES (
       @folio, @fletero, @fecha, @fecha_texto, @lineas_json, @precio_flete, @ajustes_json,
       @iva_rate, @retencion_rate, @isr_rate, @observaciones, @estado,
-      @created_at, @updated_at
+      @created_at, @updated_at, @uuid, NULL
     )
   `).run({
     folio: null,
@@ -120,7 +121,8 @@ function createFlete(data) {
     observaciones: data.observaciones || null,
     estado: data.estado || 'guardado',
     created_at: ts,
-    updated_at: ts
+    updated_at: ts,
+    uuid: crypto.randomUUID()
   });
 
   const id = info.lastInsertRowid;
@@ -152,7 +154,8 @@ function updateFlete(id, data) {
       isr_rate = @isr_rate,
       observaciones = @observaciones,
       estado = @estado,
-      updated_at = @updated_at
+      updated_at = @updated_at,
+      synced_at = NULL
     WHERE id = @id
   `).run({
     id,

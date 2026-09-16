@@ -4,6 +4,7 @@
 // que reescribir (misma forma de las funciones, pero usando el cliente
 // de Supabase/Postgres en lugar de better-sqlite3).
 
+const crypto = require('crypto');
 const db = require('./database');
 
 function nowIso() {
@@ -129,11 +130,11 @@ function createFormato(data) {
     INSERT INTO formatos (
       folio, productor, grua, fecha, fecha_texto, producto_fsc, destino,
       generos_json, ajustes_json, iva_rate, isr_rate,
-      observaciones, estado, created_at, updated_at
+      observaciones, estado, created_at, updated_at, uuid, synced_at
     ) VALUES (
       @folio, @productor, @grua, @fecha, @fecha_texto, @producto_fsc, @destino,
       @generos_json, @ajustes_json, @iva_rate, @isr_rate,
-      @observaciones, @estado, @created_at, @updated_at
+      @observaciones, @estado, @created_at, @updated_at, @uuid, NULL
     )
   `).run({
     folio: null,
@@ -150,7 +151,8 @@ function createFormato(data) {
     observaciones: data.observaciones || null,
     estado: data.estado || 'guardado',
     created_at: ts,
-    updated_at: ts
+    updated_at: ts,
+    uuid: crypto.randomUUID()
   });
 
   const id = info.lastInsertRowid;
@@ -183,7 +185,8 @@ function updateFormato(id, data) {
       isr_rate = @isr_rate,
       observaciones = @observaciones,
       estado = @estado,
-      updated_at = @updated_at
+      updated_at = @updated_at,
+      synced_at = NULL
     WHERE id = @id
   `).run({
     id,

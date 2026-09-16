@@ -8,6 +8,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const Database = require('better-sqlite3');
 
 // En la app de escritorio (Electron), main.js fija EXTRACCION_DATA_DIR a la
@@ -100,6 +101,26 @@ CREATE INDEX IF NOT EXISTS idx_fletes_fletero ON fletes(fletero);
   const cols = db.prepare('PRAGMA table_info(fletes)').all().map((c) => c.name);
   if (!cols.includes('ajustes_json')) {
     db.exec(`ALTER TABLE fletes ADD COLUMN ajustes_json TEXT NOT NULL DEFAULT '[]'`);
+  }
+}
+
+// Migración: agrega "uuid" (identidad estable para el respaldo en la nube,
+// independiente del id autoincremental local) y "synced_at" (marca de
+// cuándo se subió por última vez a Supabase) a formatos y fletes. Las filas
+// ya existentes reciben un uuid nuevo y quedan pendientes de subir
+// (synced_at = NULL).
+for (const tabla of ['formatos', 'fletes']) {
+  const cols = db.prepare(`PRAGMA table_info(${tabla})`).all().map((c) => c.name);
+  if (!cols.includes('uuid')) {
+    db.exec(`ALTER TABLE ${tabla} ADD COLUMN uuid TEXT`);
+    db.exec(`ALTER TABLE ${tabla} ADD COLUMN synced_at TEXT`);
+    const filas = db.prepare(`SELECT id FROM ${tabla} WHERE uuid IS NULL`).all();
+    const asignarUuid = db.prepare(`UPDATE ${tabla} SET uuid = ? WHERE id = ?`);
+    const tx = db.transaction((rows) => {
+      for (const f of rows) asignarUuid.run(crypto.randomUUID(), f.id);
+    });
+    tx(filas);
+    db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_${tabla}_uuid ON ${tabla}(uuid)`);
   }
 }
 
@@ -203,7 +224,10 @@ const defaults = {
   fletes_iva_rate: '0.16',
   fletes_retencion_rate: '0.04',
   fletes_isr_rate: '0.0125',
-  logo_path: 'images/logo.png'
+  logo_path: 'images/logo.png',
+  supabase_enabled: 'false',
+  supabase_url: '',
+  supabase_key: ''
 };
 
 const insertDefault = db.prepare('INSERT OR IGNORE INTO settings (clave, valor) VALUES (?, ?)');
