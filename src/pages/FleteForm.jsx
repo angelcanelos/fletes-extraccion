@@ -101,20 +101,53 @@ export default function FleteForm() {
         setIsrActivo(f.isr_rate > 0);
         if (f.isr_rate > 0) setIsrBackup(f.isr_rate * 100);
       } else {
+        // Si hay un fletero pre-seleccionado por URL, usar sus tasas del catálogo
+        let retRate = (s.fletes_retencion_rate != null ? s.fletes_retencion_rate : 0.04);
+        let isrRate = (s.fletes_isr_rate != null ? s.fletes_isr_rate : 0.0125);
+        if (fleteroInicial) {
+          const fleteros = parseFleteros(s);
+          const fletero = fleteros.find((f) => f.nombre === fleteroInicial);
+          if (fletero) {
+            retRate = fletero.retencion_rate != null ? fletero.retencion_rate : retRate;
+            isrRate = fletero.isr_rate != null ? fletero.isr_rate : isrRate;
+          }
+        }
         setDatos((d) => ({
           ...d,
           fletero: fleteroInicial,
           iva_rate_pct: (s.fletes_iva_rate != null ? s.fletes_iva_rate : 0.16) * 100,
-          retencion_rate_pct: (s.fletes_retencion_rate != null ? s.fletes_retencion_rate : 0.04) * 100,
-          isr_rate_pct: (s.fletes_isr_rate != null ? s.fletes_isr_rate : 0.0125) * 100
+          retencion_rate_pct: retRate * 100,
+          isr_rate_pct: isrRate * 100
         }));
+        setRetencionActiva(retRate > 0);
+        setRetencionBackup(retRate * 100);
+        setIsrActivo(isrRate > 0);
+        setIsrBackup(isrRate * 100);
       }
       setCargando(false);
     })();
   }, [id, esEdicion, fleteroInicial]);
 
   function campo(name, value) {
-    setDatos((d) => ({ ...d, [name]: value }));
+    setDatos((d) => {
+      const nuevo = { ...d, [name]: value };
+      // Cuando cambia el fletero, auto-llenar retención e ISR desde el catálogo
+      if (name === 'fletero' && !esEdicion) {
+        const fleteros = parseFleteros(settings);
+        const fletero = fleteros.find((f) => f.nombre === value);
+        if (fletero) {
+          const retRate = fletero.retencion_rate != null ? fletero.retencion_rate : 0.04;
+          const isrRate = fletero.isr_rate != null ? fletero.isr_rate : 0;
+          nuevo.retencion_rate_pct = retRate * 100;
+          nuevo.isr_rate_pct = isrRate * 100;
+          setRetencionActiva(retRate > 0);
+          setRetencionBackup(retRate * 100);
+          setIsrActivo(isrRate > 0);
+          setIsrBackup(isrRate * 100);
+        }
+      }
+      return nuevo;
+    });
   }
 
   function toggleRetencion() {
@@ -135,6 +168,19 @@ export default function FleteForm() {
       campo('isr_rate_pct', isrBackup || 1.25);
     }
     setIsrActivo(!isrActivo);
+  }
+
+  function saltarAlSiguiente(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form || e.target.closest('form');
+      if (!form) return;
+      const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+      const idx = inputs.indexOf(e.target);
+      if (idx >= 0 && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      }
+    }
   }
 
   function lineaCampo(idx, key, value) {
@@ -248,16 +294,16 @@ export default function FleteForm() {
           <Panel titulo="Datos generales" icon={ClipboardList}>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
               <Campo label="Fletero">
-                <select className="form-input" required value={datos.fletero} onChange={(e) => campo('fletero', e.target.value)}>
+                <select className="form-input" required value={datos.fletero} onChange={(e) => campo('fletero', e.target.value)} onKeyDown={saltarAlSiguiente}>
                   <option value="" disabled>Selecciona un fletero…</option>
                   {opcionesFletero.map((f) => <option key={f.nombre} value={f.nombre}>{f.nombre}</option>)}
                 </select>
               </Campo>
               <Campo label="Fecha del documento">
-                <input type="date" className="form-input" required value={datos.fecha} onChange={(e) => campo('fecha', e.target.value)} />
+                <input type="date" className="form-input" required value={datos.fecha} onChange={(e) => campo('fecha', e.target.value)} onKeyDown={saltarAlSiguiente} />
               </Campo>
               <Campo label="Estado">
-                <select className="form-input" value={datos.estado} onChange={(e) => campo('estado', e.target.value)}>
+                <select className="form-input" value={datos.estado} onChange={(e) => campo('estado', e.target.value)} onKeyDown={saltarAlSiguiente}>
                   <option value="guardado">Guardado</option>
                   <option value="pagado">Pagado</option>
                 </select>
@@ -285,21 +331,21 @@ export default function FleteForm() {
                       : [...parajes, { nombre: l.paraje }];
                     return (
                     <tr key={i}>
-                      <td className="w-[170px] px-2 py-2"><input type="date" className="form-input w-full" value={l.fecha} onChange={(e) => lineaCampo(i, 'fecha', e.target.value)} /></td>
-                      <td className="w-[150px] px-2 py-2"><input className="form-input w-full" placeholder="2212 0189" value={l.folio} onChange={(e) => lineaCampo(i, 'folio', e.target.value)} /></td>
+                      <td className="w-[170px] px-2 py-2"><input type="date" className="form-input w-full" value={l.fecha} onChange={(e) => lineaCampo(i, 'fecha', e.target.value)} onKeyDown={saltarAlSiguiente} /></td>
+                      <td className="w-[150px] px-2 py-2"><input className="form-input w-full" placeholder="2212 0189" value={l.folio} onChange={(e) => lineaCampo(i, 'folio', e.target.value)} onKeyDown={saltarAlSiguiente} /></td>
                       <td className="min-w-[220px] px-2 py-2">
-                        <select className="form-input w-full" value={l.paraje} onChange={(e) => lineaCampo(i, 'paraje', e.target.value)}>
+                        <select className="form-input w-full" value={l.paraje} onChange={(e) => lineaCampo(i, 'paraje', e.target.value)} onKeyDown={saltarAlSiguiente}>
                           <option value="">Selecciona…</option>
                           {opcionesParaje.map((p) => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
                         </select>
                       </td>
                       <td className="w-[160px] px-2 py-2">
-                        <select className="form-input w-full" value={l.grua} onChange={(e) => lineaCampo(i, 'grua', e.target.value)}>
+                        <select className="form-input w-full" value={l.grua} onChange={(e) => lineaCampo(i, 'grua', e.target.value)} onKeyDown={saltarAlSiguiente}>
                           <option value="">—</option>
                           {gruas.map((g) => <option key={g.grua} value={g.grua}>{g.grua}</option>)}
                         </select>
                       </td>
-                      <td className="w-[130px] px-2 py-2"><input type="number" step="0.001" className="form-input w-full" placeholder="0" value={l.metros} onChange={(e) => lineaCampo(i, 'metros', e.target.value)} /></td>
+                      <td className="w-[130px] px-2 py-2"><input type="number" step="0.001" className="form-input w-full" placeholder="0" value={l.metros} onChange={(e) => lineaCampo(i, 'metros', e.target.value)} onKeyDown={saltarAlSiguiente} /></td>
                       <td className="w-[56px] px-2 py-2">
                         <BotonQuitar disabled={datos.lineas.length <= 1} onClick={() => quitarLinea(i)} title="Quitar viaje" />
                       </td>
@@ -318,15 +364,15 @@ export default function FleteForm() {
           <Panel titulo="Precio e impuestos" icon={Percent}>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-4">
               <Campo label="Precio flete $">
-                <input type="number" step="0.01" className="form-input" placeholder="0" value={datos.precio_flete} onChange={(e) => campo('precio_flete', e.target.value)} />
+                <input type="number" step="0.01" className="form-input" placeholder="0" value={datos.precio_flete} onChange={(e) => campo('precio_flete', e.target.value)} onKeyDown={saltarAlSiguiente} />
               </Campo>
               <Campo label="IVA %">
-                <input type="number" step="0.01" className="form-input" value={datos.iva_rate_pct} onChange={(e) => campo('iva_rate_pct', e.target.value)} />
+                <input type="number" step="0.01" className="form-input" value={datos.iva_rate_pct} onChange={(e) => campo('iva_rate_pct', e.target.value)} onKeyDown={saltarAlSiguiente} />
               </Campo>
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-bold text-[#33402f]">Retención %</label>
                 <input type="number" step="0.01" className="form-input w-full disabled:bg-[#f4f6f2] disabled:text-[#9aa696]"
-                  disabled={!retencionActiva} value={datos.retencion_rate_pct} onChange={(e) => campo('retencion_rate_pct', e.target.value)} />
+                  disabled={!retencionActiva} value={datos.retencion_rate_pct} onChange={(e) => campo('retencion_rate_pct', e.target.value)} onKeyDown={saltarAlSiguiente} />
                 <button type="button" onClick={toggleRetencion}
                   className={`flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-bold transition-colors ${
                     retencionActiva ? 'bg-[#fbe4e1] text-[#c0392b] hover:bg-[#f6cfc9]' : 'bg-verde-suave text-verde-fuerte hover:bg-verde-borde'
@@ -339,7 +385,7 @@ export default function FleteForm() {
               <div className="flex flex-col gap-1.5">
                 <label className="text-[13px] font-bold text-[#33402f]">ISR %</label>
                 <input type="number" step="0.0001" className="form-input w-full disabled:bg-[#f4f6f2] disabled:text-[#9aa696]"
-                  disabled={!isrActivo} value={datos.isr_rate_pct} onChange={(e) => campo('isr_rate_pct', e.target.value)} />
+                  disabled={!isrActivo} value={datos.isr_rate_pct} onChange={(e) => campo('isr_rate_pct', e.target.value)} onKeyDown={saltarAlSiguiente} />
                 <button type="button" onClick={toggleIsr}
                   className={`flex w-fit items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-[13px] font-bold transition-colors ${
                     isrActivo ? 'bg-[#fbe4e1] text-[#c0392b] hover:bg-[#f6cfc9]' : 'bg-verde-suave text-verde-fuerte hover:bg-verde-borde'
@@ -375,8 +421,8 @@ export default function FleteForm() {
                 <tbody>
                   {datos.ajustes.map((a, i) => (
                     <tr key={i}>
-                      <td className="px-2 py-2"><input className="form-input w-full" placeholder="Ej. Descuento por adelanto" value={a.etiqueta} onChange={(e) => ajusteCampo(i, 'etiqueta', e.target.value)} /></td>
-                      <td className="px-2 py-2"><input type="number" step="0.01" className="form-input w-full" placeholder="-500 o 200" value={a.monto} onChange={(e) => ajusteCampo(i, 'monto', e.target.value)} /></td>
+                      <td className="px-2 py-2"><input className="form-input w-full" placeholder="Ej. Descuento por adelanto" value={a.etiqueta} onChange={(e) => ajusteCampo(i, 'etiqueta', e.target.value)} onKeyDown={saltarAlSiguiente} /></td>
+                      <td className="px-2 py-2"><input type="number" step="0.01" className="form-input w-full" placeholder="-500 o 200" value={a.monto} onChange={(e) => ajusteCampo(i, 'monto', e.target.value)} onKeyDown={saltarAlSiguiente} /></td>
                       <td className="px-2 py-2">
                         <BotonQuitar onClick={() => quitarAjuste(i)} title="Quitar ajuste" />
                       </td>
@@ -391,7 +437,7 @@ export default function FleteForm() {
           <Panel titulo="Observaciones (opcional, uso interno)" icon={NotebookPen}>
             <Campo label="">
               <textarea className="form-input" rows={3} placeholder="Notas internas, no se imprimen en el comprobante"
-                value={datos.observaciones} onChange={(e) => campo('observaciones', e.target.value)} />
+                value={datos.observaciones} onChange={(e) => campo('observaciones', e.target.value)} onKeyDown={saltarAlSiguiente} />
             </Campo>
           </Panel>
 

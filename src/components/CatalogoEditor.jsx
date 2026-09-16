@@ -27,6 +27,19 @@ export default function CatalogoEditor({
     setFilas((f) => f.filter((_, i) => i !== idx));
   }
 
+  function saltarAlSiguiente(e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form || e.target.closest('form');
+      if (!form) return;
+      const inputs = Array.from(form.querySelectorAll('input, select, textarea'));
+      const idx = inputs.indexOf(e.target);
+      if (idx >= 0 && idx < inputs.length - 1) {
+        inputs[idx + 1].focus();
+      }
+    }
+  }
+
   async function guardar() {
     setGuardando(true);
     try {
@@ -75,6 +88,7 @@ export default function CatalogoEditor({
                     placeholder={c.placeholder || ''}
                     value={fila[c.key]}
                     onChange={(e) => campoFila(i, c.key, e.target.value)}
+                    onKeyDown={saltarAlSiguiente}
                   />
                 </td>
               ))}

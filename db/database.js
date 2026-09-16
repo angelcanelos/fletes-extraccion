@@ -174,28 +174,28 @@ const defaults = {
     { nombre: 'FORESTAL TEZAINS' }
   ]),
   fleteros_json: JSON.stringify([
-    { nombre: 'FIDENCIO NUÑEZ RAMIREZ' },
-    { nombre: 'LEONEL RIVERA RODRIGUEZ' },
-    { nombre: 'RAMON NUÑEZ NUÑEZ' },
-    { nombre: 'EMILIO RIVERA RODRIGUEZ' },
-    { nombre: 'MARCO ANTONIO REYES QUINTERO' },
-    { nombre: 'SEVERIANO REYES ACOSTA' },
-    { nombre: 'MARTIN RODRIGUEZ RODRIGUEZ' },
-    { nombre: 'NOE DE LA CRUZ NUÑEZ' },
-    { nombre: 'ADAN DE LA CRUZ NUÑEZ' },
-    { nombre: 'MARIO RODRIGUEZ MONTENEGRO' },
-    { nombre: 'GABRIEL NUÑEZ NUÑEZ' },
-    { nombre: 'JANETH ESTRADA BLANCO' },
-    { nombre: 'CARLOS RODRIGUEZ NUÑEZ' },
-    { nombre: 'OCTAVIO VIRREY REYES' },
-    { nombre: 'SIMON REYES ACOSTA' },
-    { nombre: 'COSME RODRIGUEZ CORRAL' },
-    { nombre: 'JOSE ANGEL RODRIGUEZ NUÑEZ' },
-    { nombre: 'JESUS OMAR RODRIGUEZ VIRREY' },
-    { nombre: 'PEDRO REYES ROJO' },
-    { nombre: 'ELEAZAR BARRAZA NEVAREZ' },
-    { nombre: 'BALDOMERO SANCHEZ VIRREY' },
-    { nombre: 'ELIAS MEZA MARTINEZ' }
+    { nombre: 'FIDENCIO NUÑEZ RAMIREZ', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'LEONEL RIVERA RODRIGUEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'RAMON NUÑEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'EMILIO RIVERA RODRIGUEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'MARCO ANTONIO REYES QUINTERO', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'SEVERIANO REYES ACOSTA', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'MARTIN RODRIGUEZ RODRIGUEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'NOE DE LA CRUZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'ADAN DE LA CRUZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'MARIO RODRIGUEZ MONTENEGRO', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'GABRIEL NUÑEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'JANETH ESTRADA BLANCO', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'CARLOS RODRIGUEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'OCTAVIO VIRREY REYES', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'SIMON REYES ACOSTA', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'COSME RODRIGUEZ CORRAL', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'JOSE ANGEL RODRIGUEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'JESUS OMAR RODRIGUEZ VIRREY', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'PEDRO REYES ROJO', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'ELEAZAR BARRAZA NEVAREZ', retencion_rate: 0.04, isr_rate: 0.0125 },
+    { nombre: 'BALDOMERO SANCHEZ VIRREY', retencion_rate: 0.04, isr_rate: 0 },
+    { nombre: 'ELIAS MEZA MARTINEZ', retencion_rate: 0.04, isr_rate: 0.0125 }
   ]),
   parajes_json: JSON.stringify([
     { nombre: 'RANCHO QUEMADO' }
@@ -238,11 +238,25 @@ insertManyDefaults(defaults);
       const actual = JSON.parse(fila.valor || '[]');
       const nuevos = JSON.parse(defaults.fleteros_json);
       if (Array.isArray(actual)) {
+        const mapaNuevos = {};
+        nuevos.forEach((f) => { mapaNuevos[f.nombre.trim().toUpperCase()] = f; });
         const yaExiste = new Set(actual.map((f) => (f && f.nombre || '').trim().toUpperCase()));
         const faltantes = nuevos.filter((f) => !yaExiste.has(f.nombre.trim().toUpperCase()));
-        if (faltantes.length) {
+        // Agregar campos retencion_rate/isr_rate a fleteros existentes que no los tengan
+        const completa = actual.map((f) => {
+          if (f && f.retencion_rate === undefined) {
+            const def = mapaNuevos[f.nombre.trim().toUpperCase()];
+            return {
+              ...f,
+              retencion_rate: def ? def.retencion_rate : 0.04,
+              isr_rate: def ? def.isr_rate : 0
+            };
+          }
+          return f;
+        });
+        if (faltantes.length || completa.some((f, i) => f !== actual[i])) {
           db.prepare(`UPDATE settings SET valor = ? WHERE clave = 'fleteros_json'`)
-            .run(JSON.stringify([...actual, ...faltantes]));
+            .run(JSON.stringify([...completa, ...faltantes]));
         }
       }
     } catch { /* ignora json corrupto */ }
