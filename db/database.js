@@ -174,28 +174,28 @@ const defaults = {
     { nombre: 'FORESTAL TEZAINS' }
   ]),
   fleteros_json: JSON.stringify([
-    { nombre: 'FIDENCIO NUÑEZ RAMIREZ', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'LEONEL RIVERA RODRIGUEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'RAMON NUÑEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'EMILIO RIVERA RODRIGUEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'MARCO ANTONIO REYES QUINTERO', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'SEVERIANO REYES ACOSTA', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'MARTIN RODRIGUEZ RODRIGUEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'NOE DE LA CRUZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'ADAN DE LA CRUZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'MARIO RODRIGUEZ MONTENEGRO', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'GABRIEL NUÑEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'JANETH ESTRADA BLANCO', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'CARLOS RODRIGUEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'OCTAVIO VIRREY REYES', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'SIMON REYES ACOSTA', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'COSME RODRIGUEZ CORRAL', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'JOSE ANGEL RODRIGUEZ NUÑEZ', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'JESUS OMAR RODRIGUEZ VIRREY', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'PEDRO REYES ROJO', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'ELEAZAR BARRAZA NEVAREZ', retencion_rate: 0.04, isr_rate: 0.0125 },
-    { nombre: 'BALDOMERO SANCHEZ VIRREY', retencion_rate: 0.04, isr_rate: 0 },
-    { nombre: 'ELIAS MEZA MARTINEZ', retencion_rate: 0.04, isr_rate: 0.0125 }
+    { nombre: 'FIDENCIO NUÑEZ RAMIREZ', retencion: true, isr: false },
+    { nombre: 'LEONEL RIVERA RODRIGUEZ', retencion: true, isr: true },
+    { nombre: 'RAMON NUÑEZ NUÑEZ', retencion: true, isr: false },
+    { nombre: 'EMILIO RIVERA RODRIGUEZ', retencion: true, isr: true },
+    { nombre: 'MARCO ANTONIO REYES QUINTERO', retencion: true, isr: true },
+    { nombre: 'SEVERIANO REYES ACOSTA', retencion: true, isr: false },
+    { nombre: 'MARTIN RODRIGUEZ RODRIGUEZ', retencion: true, isr: true },
+    { nombre: 'NOE DE LA CRUZ NUÑEZ', retencion: true, isr: true },
+    { nombre: 'ADAN DE LA CRUZ NUÑEZ', retencion: true, isr: true },
+    { nombre: 'MARIO RODRIGUEZ MONTENEGRO', retencion: true, isr: true },
+    { nombre: 'GABRIEL NUÑEZ NUÑEZ', retencion: true, isr: false },
+    { nombre: 'JANETH ESTRADA BLANCO', retencion: true, isr: false },
+    { nombre: 'CARLOS RODRIGUEZ NUÑEZ', retencion: true, isr: true },
+    { nombre: 'OCTAVIO VIRREY REYES', retencion: true, isr: true },
+    { nombre: 'SIMON REYES ACOSTA', retencion: true, isr: false },
+    { nombre: 'COSME RODRIGUEZ CORRAL', retencion: true, isr: true },
+    { nombre: 'JOSE ANGEL RODRIGUEZ NUÑEZ', retencion: true, isr: false },
+    { nombre: 'JESUS OMAR RODRIGUEZ VIRREY', retencion: true, isr: true },
+    { nombre: 'PEDRO REYES ROJO', retencion: true, isr: true },
+    { nombre: 'ELEAZAR BARRAZA NEVAREZ', retencion: true, isr: true },
+    { nombre: 'BALDOMERO SANCHEZ VIRREY', retencion: true, isr: false },
+    { nombre: 'ELIAS MEZA MARTINEZ', retencion: true, isr: true }
   ]),
   parajes_json: JSON.stringify([
     { nombre: 'RANCHO QUEMADO' }
@@ -242,17 +242,18 @@ insertManyDefaults(defaults);
         nuevos.forEach((f) => { mapaNuevos[f.nombre.trim().toUpperCase()] = f; });
         const yaExiste = new Set(actual.map((f) => (f && f.nombre || '').trim().toUpperCase()));
         const faltantes = nuevos.filter((f) => !yaExiste.has(f.nombre.trim().toUpperCase()));
-        // Agregar campos retencion_rate/isr_rate a fleteros existentes que no los tengan
+        // Migrar formato viejo (retencion_rate/isr_rate) a nuevo (retencion/isr boolean)
         const completa = actual.map((f) => {
-          if (f && f.retencion_rate === undefined) {
-            const def = mapaNuevos[f.nombre.trim().toUpperCase()];
-            return {
-              ...f,
-              retencion_rate: def ? def.retencion_rate : 0.04,
-              isr_rate: def ? def.isr_rate : 0
-            };
-          }
-          return f;
+          if (!f) return f;
+          // Si ya tiene el formato nuevo (retencion/isr como boolean), dejarlo
+          if (typeof f.retencion === 'boolean' && typeof f.isr === 'boolean') return f;
+          // Convertir de formato viejo
+          const def = mapaNuevos[(f.nombre || '').trim().toUpperCase()];
+          return {
+            nombre: f.nombre,
+            retencion: f.retencion_rate != null ? f.retencion_rate > 0 : (def ? def.retencion : true),
+            isr: f.isr_rate != null ? f.isr_rate > 0 : (def ? def.isr : false)
+          };
         });
         if (faltantes.length || completa.some((f, i) => f !== actual[i])) {
           db.prepare(`UPDATE settings SET valor = ? WHERE clave = 'fleteros_json'`)

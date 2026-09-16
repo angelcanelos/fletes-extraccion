@@ -108,8 +108,8 @@ export default function FleteForm() {
           const fleteros = parseFleteros(s);
           const fletero = fleteros.find((f) => f.nombre === fleteroInicial);
           if (fletero) {
-            retRate = fletero.retencion_rate != null ? fletero.retencion_rate : retRate;
-            isrRate = fletero.isr_rate != null ? fletero.isr_rate : isrRate;
+            retRate = fletero.retencion ? 0.04 : 0;
+            isrRate = fletero.isr ? 0.0125 : 0;
           }
         }
         setDatos((d) => ({
@@ -136,8 +136,8 @@ export default function FleteForm() {
         const fleteros = parseFleteros(settings);
         const fletero = fleteros.find((f) => f.nombre === value);
         if (fletero) {
-          const retRate = fletero.retencion_rate != null ? fletero.retencion_rate : 0.04;
-          const isrRate = fletero.isr_rate != null ? fletero.isr_rate : 0;
+          const retRate = fletero.retencion ? 0.04 : 0;
+          const isrRate = fletero.isr ? 0.0125 : 0;
           nuevo.retencion_rate_pct = retRate * 100;
           nuevo.isr_rate_pct = isrRate * 100;
           setRetencionActiva(retRate > 0);

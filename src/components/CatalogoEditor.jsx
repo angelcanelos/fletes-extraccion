@@ -4,10 +4,26 @@ import { Api } from '../lib/api.js';
 import Panel from './Panel.jsx';
 import { useToast } from './Toast.jsx';
 
-// Editor de catálogo genérico (Géneros, Grúas, Destinos, Fleteros...):
-// una tabla de filas con N campos, agregar/quitar filas, y un botón de
-// Guardar propio de esta sección que solo escribe su clave en settings
-// (no se mezcla con el resto de Ajustes).
+function Switch({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors ${
+        checked ? 'bg-verde' : 'bg-[#d1d5c8]'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+}
+
 export default function CatalogoEditor({
   icon, titulo, descripcion, settingsKey, campos, valorInicial, filaVacia
 }) {
@@ -49,7 +65,8 @@ export default function CatalogoEditor({
         .map((fila) => {
           const out = {};
           for (const c of campos) {
-            if (c.tipo === 'number') out[c.key] = parseFloat(fila[c.key]) || 0;
+            if (c.tipo === 'switch') out[c.key] = Boolean(fila[c.key]);
+            else if (c.tipo === 'number') out[c.key] = parseFloat(fila[c.key]) || 0;
             else out[c.key] = String(fila[c.key] || '').trim().toUpperCase();
           }
           return out;
@@ -81,15 +98,22 @@ export default function CatalogoEditor({
             <tr key={i}>
               {campos.map((c) => (
                 <td key={c.key} className="px-2 py-2">
-                  <input
-                    type={c.tipo === 'number' ? 'number' : 'text'}
-                    step={c.tipo === 'number' ? '0.01' : undefined}
-                    className="form-input w-full"
-                    placeholder={c.placeholder || ''}
-                    value={fila[c.key]}
-                    onChange={(e) => campoFila(i, c.key, e.target.value)}
-                    onKeyDown={saltarAlSiguiente}
-                  />
+                  {c.tipo === 'switch' ? (
+                    <Switch
+                      checked={Boolean(fila[c.key])}
+                      onChange={(val) => campoFila(i, c.key, val)}
+                    />
+                  ) : (
+                    <input
+                      type={c.tipo === 'number' ? 'number' : 'text'}
+                      step={c.tipo === 'number' ? '0.01' : undefined}
+                      className="form-input w-full"
+                      placeholder={c.placeholder || ''}
+                      value={fila[c.key]}
+                      onChange={(e) => campoFila(i, c.key, e.target.value)}
+                      onKeyDown={saltarAlSiguiente}
+                    />
+                  )}
                 </td>
               ))}
               <td className="px-2 py-2">

@@ -206,14 +206,14 @@ export default function Ajustes() {
       <CatalogoEditor
         icon={UserRound}
         titulo="Fleteros"
-        descripcion="Nombre del fletero y sus tasas de retención e ISR por defecto. Estos valores se aplican al crear un flete nuevo para ese fletero."
+        descripcion="Nombre del fletero y si aplica retención e ISR. Estos switches se aplican al crear un flete nuevo para ese fletero."
         settingsKey="fleteros_json"
         valorInicial={catalogos.fleteros}
-        filaVacia={{ nombre: '', retencion_rate: 0.04, isr_rate: 0 }}
+        filaVacia={{ nombre: '', retencion: true, isr: false }}
         campos={[
           { key: 'nombre', label: 'Fletero', tipo: 'text', placeholder: 'Ej. JUAN PEREZ' },
-          { key: 'retencion_rate', label: 'Retención', tipo: 'number', placeholder: '0.04' },
-          { key: 'isr_rate', label: 'ISR', tipo: 'number', placeholder: '0.0125' }
+          { key: 'retencion', label: 'Retención 4%', tipo: 'switch' },
+          { key: 'isr', label: 'ISR 1.25%', tipo: 'switch' }
         ]}
       />
 
